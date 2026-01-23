@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-#include "hikrobot/hikrobot.hpp"
+// #include "hikrobot/hikrobot.hpp"
 #include "mindvision/mindvision.hpp"
 #include "tools/yaml.hpp"
 
@@ -16,15 +16,15 @@ Camera::Camera(const std::string & config_path)
 
   if (camera_name == "mindvision") {
     auto gamma = tools::read<double>(yaml, "gamma");
-    auto vid_pid = tools::read<std::string>(yaml, "vid_pid");
+    auto vid_pid = yaml["vid_pid"] ? yaml["vid_pid"].as<std::string>() : std::string{};
     camera_ = std::make_unique<MindVision>(exposure_ms, gamma, vid_pid);
   }
 
-  else if (camera_name == "hikrobot") {
-    auto gain = tools::read<double>(yaml, "gain");
-    auto vid_pid = tools::read<std::string>(yaml, "vid_pid");
-    camera_ = std::make_unique<HikRobot>(exposure_ms, gain, vid_pid);
-  }
+  // else if (camera_name == "hikrobot") {
+  //   auto gain = tools::read<double>(yaml, "gain");
+  //   auto vid_pid = tools::read<std::string>(yaml, "vid_pid");
+  //   camera_ = std::make_unique<HikRobot>(exposure_ms, gain, vid_pid);
+  // }
 
   else {
     throw std::runtime_error("Unknow camera_name: " + camera_name + "!");

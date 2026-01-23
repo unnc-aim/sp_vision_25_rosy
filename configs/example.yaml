@@ -1,5 +1,6 @@
 # enemy_color: "red"
 enemy_color: "blue"
+detect_color: 1  # 0=red, 1=blue
 
 
 #####-----神经网络参数-----#####

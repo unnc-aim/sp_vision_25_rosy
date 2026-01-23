@@ -20,7 +20,7 @@ MindVision::MindVision(double exposure_ms, double gamma, const std::string & vid
   vid_(-1),
   pid_(-1)
 {
-  set_vid_pid(vid_pid);
+    set_vid_pid(vid_pid);
   if (libusb_init(NULL)) tools::logger()->warn("Unable to init libusb!");
 
   try_open();
@@ -96,7 +96,7 @@ void MindVision::open()
 
       auto img = cv::Mat(height_, width_, CV_8UC3);
 
-      auto status = CameraGetImageBuffer(handle_, &head, &raw, 100);
+      auto status = CameraGetImageBuffer(handle_, &head, &raw, 500);
       auto timestamp = std::chrono::steady_clock::now();
 
       if (status != CAMERA_STATUS_SUCCESS) {

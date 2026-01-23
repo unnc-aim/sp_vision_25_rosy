@@ -38,7 +38,7 @@ void DM_IMU::init_serial()
 {
   try {
     serial_.setPort("/dev/ttyACM0");
-    serial_.setBaudrate(921600);
+    serial_.setBaudrate(115200);
     serial_.setFlowcontrol(serial::flowcontrol_none);
     serial_.setParity(serial::parity_none);  //default is parity_none
     serial_.setStopbits(serial::stopbits_one);

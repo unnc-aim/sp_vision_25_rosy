@@ -16,33 +16,44 @@ namespace io
 {
 struct __attribute__((packed)) GimbalToVision
 {
-  uint8_t head[2] = {'S', 'P'};
-  uint8_t mode;  // 0: 空闲, 1: 自瞄, 2: 小符, 3: 大符
-  float q[4];    // wxyz顺序
-  float yaw;
-  float yaw_vel;
+  uint8_t header;     
+  uint8_t detect_color : 1;  // 0-red 1-blue
+  uint8_t reset_tracker : 1;
+  uint8_t reserved : 6;
+  float roll;
   float pitch;
-  float pitch_vel;
-  float bullet_speed;
-  uint16_t bullet_count;  // 子弹累计发送次数
-  uint16_t crc16;
+  float chassis_pitch;
+  float yaw;
+  float aim_x;
+  float aim_y;
+  float aim_z;
+  uint16_t checksum;  // CRC16 little-endian
 };
-
-static_assert(sizeof(GimbalToVision) <= 64);
 
 struct __attribute__((packed)) VisionToGimbal
 {
-  uint8_t head[2] = {'S', 'P'};
-  uint8_t mode;  // 0: 不控制, 1: 控制云台但不开火，2: 控制云台且开火
+  uint8_t header;  
+  uint8_t tracking : 1;
+  uint8_t id : 3;          // 0-outpost 6-guard 7-base
+  uint8_t armors_num : 3;  // 2-balance 3-outpost 4-normal
+  uint8_t reserved : 1;
+  float x;
+  float y;
+  float z;
   float yaw;
-  float yaw_vel;
-  float yaw_acc;
-  float pitch;
-  float pitch_vel;
-  float pitch_acc;
-  uint16_t crc16;
+  float vx;
+  float vy;
+  float vz;
+  float v_yaw;
+  float r1;
+  float r2;
+  float dz;
+  float v_x;
+  float v_y;
+  uint16_t checksum;  // CRC16 little-endian
 };
 
+static_assert(sizeof(GimbalToVision) <= 64);
 static_assert(sizeof(VisionToGimbal) <= 64);
 
 enum class GimbalMode

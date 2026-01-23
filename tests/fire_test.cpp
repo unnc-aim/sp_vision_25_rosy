@@ -33,21 +33,33 @@ int main(int argc, char * argv[])
   io::Gimbal gimbal(config_path);
   io::VisionToGimbal plan;
   auto last_t = std::chrono::steady_clock::now();
+  plan.tracking = 1;
+  plan.id = 0;
+  plan.armors_num = 0;
+  plan.reserved = 0;
+  plan.x = 0;
+  plan.y = 0;
+  plan.z = 0;
   plan.yaw = 0;
-  plan.yaw_vel = 0;
-  plan.yaw_acc = 0;
-  plan.pitch = 0;
-  plan.pitch_vel = 0;
-  plan.pitch_acc = 0;
+  plan.vx = 0;
+  plan.vy = 0;
+  plan.vz = 0;
+  plan.v_yaw = 0;
+  plan.r1 = 0;
+  plan.r2 = 0;
+  plan.dz = 0;
+  plan.v_x = 0;
+  plan.v_y = 0;
 
   while (!exiter.exit()) {
     auto now = std::chrono::steady_clock::now();
     auto gs = gimbal.state();
-    if(tools::delta_time(now, last_t) > 1.600) {
-        plan.mode = 2;
-        tools::logger()->debug("fire!");
-        last_t = now;
-    } else plan.mode = 1;
+    if (tools::delta_time(now, last_t) > 1.600) {
+      plan.tracking = 1;  // 兼容旧 fire 信号，复用 reserved 位
+      tools::logger()->debug("fire!");
+      last_t = now;
+    } else
+      plan.tracking = 0;
 
 
     gimbal.send(plan);
@@ -56,8 +68,8 @@ int main(int argc, char * argv[])
 
     nlohmann::json data;
 
-    if (plan.mode != 0) {
-      data["shoot"] = plan.mode == 2 ? 1 : 0;
+    if (plan.tracking != 0) {
+      data["shoot"] = plan.tracking == 2 ? 1 : 0;
     }
 
     plotter.plot(data);
