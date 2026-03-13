@@ -9,7 +9,9 @@
 #include <optional>
 #include <string>
 
+#include "io/command.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "sp_msgs/msg/auto_aim_command_msg.hpp"
 #include "std_msgs/msg/string.hpp"
 
 namespace io
@@ -25,9 +27,12 @@ public:
 
   void send_data(const Eigen::Vector4d & data);
 
+  void send_autoaim_command(const io::Command & command);
+
 private:
   // ROS2 发布者
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
+  rclcpp::Publisher<sp_msgs::msg::AutoAimCommandMsg>::SharedPtr autoaim_command_publisher_;
 };
 
 }  // namespace io

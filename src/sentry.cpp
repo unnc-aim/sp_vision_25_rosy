@@ -96,6 +96,7 @@ int main(int argc, char * argv[])
     command.shoot = shooter.shoot(command, aimer, targets, gimbal_pos);
 
     cboard.send(command);
+    ros2.publish_autoaim_command(command);
 
     /// ROS2通信
     Eigen::Vector4d target_info = decider.get_target_info(armors, targets);

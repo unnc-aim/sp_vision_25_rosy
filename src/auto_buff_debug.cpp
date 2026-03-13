@@ -4,6 +4,7 @@
 
 #include "io/camera.hpp"
 #include "io/cboard.hpp"
+#include "io/ros2/ros2.hpp"
 #include "tasks/auto_buff/buff_aimer.hpp"
 #include "tasks/auto_buff/buff_detector.hpp"
 #include "tasks/auto_buff/buff_solver.hpp"
@@ -39,6 +40,7 @@ int main(int argc, char * argv[])
 
   // 初始化C板、相机
   io::CBoard cboard(config_path);
+  io::ROS2 ros2;
   io::Camera camera(config_path);
 
   // 初始化识别器、解算器、追踪器、瞄准器
@@ -72,6 +74,7 @@ int main(int argc, char * argv[])
     auto command = aimer.aim(target_copy, t, cboard.bullet_speed, true);
 
     cboard.send(command);
+    ros2.publish_autoaim_command(command);
 
     // -------------- 调试输出 --------------
 

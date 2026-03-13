@@ -6,6 +6,7 @@
 
 #include "io/camera.hpp"
 #include "io/cboard.hpp"
+#include "io/ros2/ros2.hpp"
 #include "tasks/auto_aim/aimer.hpp"
 #include "tasks/auto_aim/multithread/commandgener.hpp"
 #include "tasks/auto_aim/shooter.hpp"
@@ -39,6 +40,7 @@ int main(int argc, char * argv[])
   tools::Recorder recorder;
 
   io::CBoard cboard(config_path);
+  io::ROS2 ros2;
   io::Camera camera(config_path);
 
   auto_aim::YOLO detector(config_path, false);
@@ -77,6 +79,7 @@ int main(int argc, char * argv[])
     auto command = aimer.aim(targets, t, cboard.bullet_speed);
 
     cboard.send(command);
+    ros2.publish_autoaim_command(command);
   }
 
   return 0;

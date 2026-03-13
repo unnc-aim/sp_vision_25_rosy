@@ -23,6 +23,11 @@ ROS2::~ROS2()
 
 void ROS2::publish(const Eigen::Vector4d & target_pos) { publish2nav_->send_data(target_pos); }
 
+void ROS2::publish_autoaim_command(const io::Command & command)
+{
+  publish2nav_->send_autoaim_command(command);
+}
+
 std::vector<int8_t> ROS2::subscribe_enemy_status()
 {
   return subscribe2nav_->subscribe_enemy_status();

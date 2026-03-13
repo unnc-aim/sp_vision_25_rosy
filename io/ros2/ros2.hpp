@@ -1,6 +1,7 @@
 #ifndef IO__ROS2_HPP
 #define IO__ROS2_HPP
 
+#include "io/command.hpp"
 #include "publish2nav.hpp"
 #include "subscribe2nav.hpp"
 
@@ -14,6 +15,8 @@ public:
   ~ROS2();
 
   void publish(const Eigen::Vector4d & target_pos);
+
+  void publish_autoaim_command(const io::Command & command);
 
   std::vector<int8_t> subscribe_enemy_status();
 

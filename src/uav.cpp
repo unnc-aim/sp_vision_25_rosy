@@ -4,6 +4,7 @@
 
 #include "io/camera.hpp"
 #include "io/dm_imu/dm_imu.hpp"
+#include "io/ros2/ros2.hpp"
 #include "tasks/auto_aim/aimer.hpp"
 #include "tasks/auto_aim/detector.hpp"
 #include "tasks/auto_aim/shooter.hpp"
@@ -43,6 +44,7 @@ int main(int argc, char * argv[])
 
   io::Camera camera(config_path);
   io::CBoard cboard(config_path);
+  io::ROS2 ros2;
 
   auto_aim::Detector detector(config_path);
   auto_aim::Solver solver(config_path);
@@ -89,6 +91,7 @@ int main(int argc, char * argv[])
       command.shoot = shooter.shoot(command, aimer, targets, ypr);
 
       cboard.send(command);
+      ros2.publish_autoaim_command(command);
     }
 
     /// 打符

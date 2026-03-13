@@ -13,8 +13,21 @@ namespace io
 Publish2Nav::Publish2Nav() : Node("auto_aim_target_pos_publisher")
 {
   publisher_ = this->create_publisher<std_msgs::msg::String>("auto_aim_target_pos", 10);
+  autoaim_command_publisher_ =
+    this->create_publisher<sp_msgs::msg::AutoAimCommandMsg>("/sp_vision/autoaim_command", 10);
 
   RCLCPP_INFO(this->get_logger(), "auto_aim_target_pos_publisher node initialized.");
+}
+
+void Publish2Nav::send_autoaim_command(const io::Command & command)
+{
+  sp_msgs::msg::AutoAimCommandMsg message;
+  message.timestamp = this->now();
+  message.control = command.control;
+  message.shoot = command.shoot;
+  message.yaw = command.yaw;
+  message.pitch = command.pitch;
+  autoaim_command_publisher_->publish(message);
 }
 
 Publish2Nav::~Publish2Nav()
