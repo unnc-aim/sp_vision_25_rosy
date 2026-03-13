@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16.3)
 
 project(sp_vision)
 
+include(GNUInstallDirs)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Release)
 message(STATUS "--------------------CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}--------------------")
@@ -128,4 +130,37 @@ if(ament_cmake_FOUND AND rclcpp_FOUND AND std_msgs_FOUND AND rosidl_typesupport_
     target_link_libraries(topic_loop_test ${OpenCV_LIBS} fmt::fmt tools io)
 else()
     message(STATUS "ROS2 environment not found, skipping ROS2-related code.")
+endif()
+
+install(
+    TARGETS
+        standard
+        mt_standard
+        standard_mpc
+        auto_aim_debug_mpc
+        mt_auto_aim_debug
+        auto_buff_debug
+        auto_buff_debug_mpc
+        uav
+        uav_debug
+        capture
+        calibrate_camera
+        calibrate_handeye
+        calibrate_robotworld_handeye
+        split_video
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+if(ament_cmake_FOUND AND rclcpp_FOUND AND std_msgs_FOUND AND rosidl_typesupport_cpp_FOUND AND sp_msgs_FOUND)
+    install(
+        TARGETS
+            sentry
+            sentry_bp
+            sentry_debug
+            sentry_multithread
+            publish_test
+            subscribe_test
+            topic_loop_test
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
 endif()
