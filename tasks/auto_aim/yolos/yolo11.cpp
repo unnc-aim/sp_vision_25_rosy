@@ -49,8 +49,16 @@ YOLO11::YOLO11(const std::string & config_path, bool debug)
 
   // TODO: ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY)
   model = ppp.build();
-  compiled_model_ = core_.compile_model(
-    model, device_, ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY));
+  try {
+    compiled_model_ = core_.compile_model(
+      model, device_, ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY));
+  } catch (const ov::Exception & e) {
+    tools::logger()->warn(
+      "OpenVINO device \"{}\" unavailable for YOLO11, fallback to CPU: {}", device_, e.what());
+    device_ = "CPU";
+    compiled_model_ = core_.compile_model(
+      model, device_, ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY));
+  }
 }
 
 std::list<Armor> YOLO11::detect(const cv::Mat & raw_img, int frame_count)

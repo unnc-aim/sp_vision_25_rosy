@@ -16,7 +16,9 @@ namespace io
 class HikRobot : public CameraBase
 {
 public:
-  HikRobot(double exposure_ms, double gain, const std::string & vid_pid);
+  HikRobot(
+    double exposure_ms, double gain, const std::string & vid_pid,
+    const std::string & serial_number = "");
   ~HikRobot() override;
   void read(cv::Mat & img, std::chrono::steady_clock::time_point & timestamp) override;
 
@@ -40,9 +42,12 @@ private:
   tools::ThreadSafeQueue<CameraData> queue_;
 
   int vid_, pid_;
+  std::string serial_number_;
 
   void capture_start();
   void capture_stop();
+
+  MV_CC_DEVICE_INFO * select_device(const MV_CC_DEVICE_INFO_LIST & device_list) const;
 
   void set_float_value(const std::string & name, double value);
   void set_enum_value(const std::string & name, unsigned int value);

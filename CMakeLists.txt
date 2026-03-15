@@ -21,6 +21,9 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR})
 
+# Keep runtime YAML files available from the package build directory.
+file(COPY ${PROJECT_SOURCE_DIR}/configs DESTINATION ${CMAKE_BINARY_DIR})
+
 
 add_subdirectory(tools)
 add_subdirectory(io)

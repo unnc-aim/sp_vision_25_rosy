@@ -2,6 +2,8 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include "tools/logger.hpp"
+
 namespace auto_aim
 {
 Classifier::Classifier(const std::string & config_path)
@@ -10,8 +12,14 @@ Classifier::Classifier(const std::string & config_path)
   auto model = yaml["classify_model"].as<std::string>();
   net_ = cv::dnn::readNetFromONNX(model);
   auto ovmodel = core_.read_model(model);
-  compiled_model_ = core_.compile_model(
-    ovmodel, "AUTO", ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY));
+  try {
+    compiled_model_ = core_.compile_model(
+      ovmodel, "AUTO", ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY));
+  } catch (const ov::Exception & e) {
+    tools::logger()->warn("OpenVINO AUTO unavailable for classifier, fallback to CPU: {}", e.what());
+    compiled_model_ = core_.compile_model(
+      ovmodel, "CPU", ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY));
+  }
 }
 
 void Classifier::classify(Armor & armor)
