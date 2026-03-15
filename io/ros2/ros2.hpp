@@ -1,6 +1,8 @@
 #ifndef IO__ROS2_HPP
 #define IO__ROS2_HPP
 
+#include <opencv2/core/mat.hpp>
+
 #include "io/command.hpp"
 #include "publish2nav.hpp"
 #include "subscribe2nav.hpp"
@@ -18,9 +20,15 @@ public:
 
   void publish_autoaim_command(const io::Command & command);
 
+  void publish_raw_image(const cv::Mat & image);
+
+  void publish_autoaim_image(const cv::Mat & image);
+
   std::vector<int8_t> subscribe_enemy_status();
 
   std::vector<int8_t> subscribe_autoaim_target();
+
+  std::string subscribe_self_color();
 
   template <typename T>
   std::shared_ptr<rclcpp::Publisher<T>> create_publisher(

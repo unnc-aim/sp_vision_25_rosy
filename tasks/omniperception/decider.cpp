@@ -10,7 +10,13 @@
 
 namespace omniperception
 {
-Decider::Decider(const std::string & config_path) : detector_(config_path), count_(0)
+Decider::Decider(const std::string & config_path)
+: aim_ally_(false),
+  aim_enemy_(true),
+  aim_red_(false),
+  aim_blue_(false),
+  detector_(config_path),
+  count_(0)
 {
   auto yaml = YAML::LoadFile(config_path);
   img_width_ = yaml["image_width"].as<double>();
@@ -21,7 +27,61 @@ Decider::Decider(const std::string & config_path) : detector_(config_path), coun
   new_fov_v_ = yaml["new_fov_v"].as<double>();
   enemy_color_ =
     (yaml["enemy_color"].as<std::string>() == "red") ? auto_aim::Color::red : auto_aim::Color::blue;
+
+  // 四个开关是“或”关系，只要命中任一条件就允许该颜色。
+  if (yaml["auto_aim_ally"]) aim_ally_ = yaml["auto_aim_ally"].as<bool>();
+  if (yaml["auto_aim_enemy"]) aim_enemy_ = yaml["auto_aim_enemy"].as<bool>();
+  if (yaml["auto_aim_red"]) aim_red_ = yaml["auto_aim_red"].as<bool>();
+  if (yaml["auto_aim_blue"]) aim_blue_ = yaml["auto_aim_blue"].as<bool>();
+
   mode_ = yaml["mode"].as<double>();
+}
+
+void Decider::set_self_color(const std::string & self_color)
+{
+  if (self_color == "red") {
+    self_color_ = auto_aim::Color::red;
+  } else if (self_color == "blue") {
+    self_color_ = auto_aim::Color::blue;
+  } else {
+    self_color_.reset();
+  }
+}
+
+bool Decider::is_color_allowed(auto_aim::Color armor_color) const
+{
+  bool allow_red = false;
+  bool allow_blue = false;
+
+  if (aim_red_) allow_red = true;
+  if (aim_blue_) allow_blue = true;
+
+  if (self_color_.has_value()) {
+    if (aim_ally_) {
+      if (self_color_.value() == auto_aim::Color::red) {
+        allow_red = true;
+      } else if (self_color_.value() == auto_aim::Color::blue) {
+        allow_blue = true;
+      }
+    }
+    if (aim_enemy_) {
+      if (self_color_.value() == auto_aim::Color::red) {
+        allow_blue = true;
+      } else if (self_color_.value() == auto_aim::Color::blue) {
+        allow_red = true;
+      }
+    }
+  }
+
+  // 兜底：如果四个开关都没有形成有效颜色集合，则沿用历史enemy_color行为。
+  if (!allow_red && !allow_blue) {
+    allow_red = (enemy_color_ == auto_aim::Color::red);
+    allow_blue = (enemy_color_ == auto_aim::Color::blue);
+  }
+
+  if (armor_color == auto_aim::Color::red) return allow_red;
+  if (armor_color == auto_aim::Color::blue) return allow_blue;
+  return false;
 }
 
 io::Command Decider::decide(
@@ -132,8 +192,8 @@ Eigen::Vector2d Decider::delta_angle(
 bool Decider::armor_filter(std::list<auto_aim::Armor> & armors)
 {
   if (armors.empty()) return true;
-  // 过滤非敌方装甲板
-  armors.remove_if([&](const auto_aim::Armor & a) { return a.color != enemy_color_; });
+  // 根据四个bool配置（或关系）过滤装甲板颜色。
+  armors.remove_if([&](const auto_aim::Armor & a) { return !is_color_allowed(a.color); });
 
   // 25赛季没有5号装甲板
   armors.remove_if([&](const auto_aim::Armor & a) { return a.name == auto_aim::ArmorName::five; });

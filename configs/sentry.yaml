@@ -23,6 +23,7 @@ roi:
 use_roi: false
 
 #####-----USB相机参数-----#####
+use_usb_cameras: false
 image_width: 1280
 image_height: 1024
 fov_h: 41.0 #87.7
@@ -35,6 +36,7 @@ usb_gamma: 160
 usb_gain: 10 #0-96
 
 #####-----工业相机参数-----#####
+use_back_camera: false
 camera_name: "hikrobot"
 exposure_ms: 8
 gain: 16
@@ -54,9 +56,11 @@ max_rectangular_error: 25 # degree
 min_confidence: 0.8
 
 #####-----cboard参数-----#####
+cboard_enabled: false
 quaternion_canid: 0x01
 bullet_speed_canid: 0x110
 send_canid: 0xff
+can_enabled: false
 can_interface: "can0"
 
 #####-----tracker参数-----#####
@@ -83,6 +87,10 @@ auto_fire: true # 是否由自瞄控制射击
 
 #####-----decider参数-----#####
 mode: 1
+auto_aim_ally: false
+auto_aim_enemy: true
+auto_aim_red: false
+auto_aim_blue: false
 
 #####-----工业相机标定参数-----#####
 R_gimbal2imubody: [1, 0, 0, 0, 1, 0, 0, 0, 1]

@@ -4,6 +4,7 @@
 #include <Eigen/Dense>  // 必须在opencv2/core/eigen.hpp上面
 #include <iostream>
 #include <list>
+#include <optional>
 #include <unordered_map>
 
 #include "detection.hpp"
@@ -47,6 +48,8 @@ public:
   void get_auto_aim_target(
     std::list<auto_aim::Armor> & armors, const std::vector<int8_t> & auto_aim_target);
 
+  void set_self_color(const std::string & self_color);
+
 private:
   int img_width_;
   int img_height_;
@@ -56,8 +59,15 @@ private:
   int count_;
 
   auto_aim::Color enemy_color_;
+  bool aim_ally_;
+  bool aim_enemy_;
+  bool aim_red_;
+  bool aim_blue_;
+  std::optional<auto_aim::Color> self_color_;
   auto_aim::YOLO detector_;
   std::vector<auto_aim::ArmorName> invincible_armor_;  //无敌状态机器人编号,英雄为1，哨兵为6
+
+  bool is_color_allowed(auto_aim::Color armor_color) const;
 
   // 定义ArmorName到ArmorPriority的映射类型
   using PriorityMap = std::unordered_map<auto_aim::ArmorName, auto_aim::ArmorPriority>;

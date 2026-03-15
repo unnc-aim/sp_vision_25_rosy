@@ -74,6 +74,8 @@ int main(int argc, char * argv[])
 
     auto armors = yolo.detect(img);
 
+    decider.set_self_color(ros2.subscribe_self_color());
+
     decider.get_invincible_armor(ros2.subscribe_enemy_status());
 
     decider.armor_filter(armors);

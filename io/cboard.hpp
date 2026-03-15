@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cmath>
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -56,7 +57,8 @@ private:
   };
 
   tools::ThreadSafeQueue<IMUData> queue_;  // 必须在can_之前初始化，否则存在死锁的可能
-  SocketCAN can_;
+  std::unique_ptr<SocketCAN> can_;
+  bool can_enabled_;
   IMUData data_ahead_;
   IMUData data_behind_;
 

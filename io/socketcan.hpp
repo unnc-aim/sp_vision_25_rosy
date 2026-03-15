@@ -11,6 +11,7 @@
 #include <cstring>
 #include <functional>
 #include <stdexcept>
+#include <string>
 #include <thread>
 
 #include "tools/logger.hpp"
@@ -18,6 +19,7 @@
 using namespace std::chrono_literals;
 
 constexpr int MAX_EVENTS = 10;
+constexpr auto OPEN_RETRY_INTERVAL = 1s;
 
 namespace io
 {
@@ -37,7 +39,7 @@ public:
     // 守护线程
     daemon_thread_ = std::thread{[this] {
       while (!quit_) {
-        std::this_thread::sleep_for(100ms);
+        std::this_thread::sleep_for(OPEN_RETRY_INTERVAL);
 
         if (ok_) continue;
 
@@ -75,6 +77,7 @@ private:
   can_frame frame_;
   epoll_event events_[MAX_EVENTS];
   std::function<void(const can_frame & frame)> rx_handler_;
+  bool has_open_warn_time_{false};
 
   void open()
   {
@@ -127,8 +130,15 @@ private:
   {
     try {
       open();
+      has_open_warn_time_ = false;
     } catch (const std::exception & e) {
-      tools::logger()->warn("SocketCAN::open() failed: {}", e.what());
+      if (!has_open_warn_time_) {
+        tools::logger()->warn(
+          "SocketCAN::open() failed on '{}': {}. Retrying every {}s in background (warning "
+          "suppressed until recovered).",
+          interface_, e.what(), OPEN_RETRY_INTERVAL.count());
+        has_open_warn_time_ = true;
+      }
     }
   }
 
@@ -151,6 +161,8 @@ private:
     epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, socket_fd_, NULL);
     ::close(epoll_fd_);
     ::close(socket_fd_);
+    epoll_fd_ = -1;
+    socket_fd_ = -1;
   }
 };
 

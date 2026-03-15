@@ -1,5 +1,8 @@
 #include "cboard.hpp"
 
+#include <algorithm>
+#include <cctype>
+
 #include "tools/math_tools.hpp"
 #include "tools/yaml.hpp"
 
@@ -10,17 +13,30 @@ CBoard::CBoard(const std::string & config_path)
   shoot_mode(ShootMode::left_shoot),
   bullet_speed(0),
   queue_(5000),
-  can_(read_yaml(config_path), std::bind(&CBoard::callback, this, std::placeholders::_1))
+  can_enabled_(true)
 // 注意: callback的运行会早于Cboard构造函数的完成
 {
-  tools::logger()->info("[Cboard] Waiting for q...");
-  queue_.pop(data_ahead_);
-  queue_.pop(data_behind_);
-  tools::logger()->info("[Cboard] Opened.");
+  auto can_interface = read_yaml(config_path);
+
+  if (can_enabled_) {
+    can_ = std::make_unique<SocketCAN>(
+      can_interface, std::bind(&CBoard::callback, this, std::placeholders::_1));
+    tools::logger()->info("[Cboard] Waiting for q...");
+    queue_.pop(data_ahead_);
+    queue_.pop(data_behind_);
+    tools::logger()->info("[Cboard] Opened.");
+  } else {
+    auto now = std::chrono::steady_clock::now();
+    data_ahead_ = {Eigen::Quaterniond::Identity(), now};
+    data_behind_ = {Eigen::Quaterniond::Identity(), now};
+    tools::logger()->warn("[Cboard] CAN is disabled by config. Running in no-cboard mode.");
+  }
 }
 
 Eigen::Quaterniond CBoard::imu_at(std::chrono::steady_clock::time_point timestamp)
 {
+  if (!can_enabled_) return Eigen::Quaterniond::Identity();
+
   if (data_behind_.timestamp < timestamp) data_ahead_ = data_behind_;
 
   while (true) {
@@ -46,6 +62,8 @@ Eigen::Quaterniond CBoard::imu_at(std::chrono::steady_clock::time_point timestam
 
 void CBoard::send(Command command) const
 {
+  if (!can_enabled_) return;
+
   can_frame frame;
   frame.can_id = send_canid_;
   frame.can_dlc = 8;
@@ -59,7 +77,7 @@ void CBoard::send(Command command) const
   frame.data[7] = (int16_t)(command.horizon_distance * 1e4);
 
   try {
-    can_.write(&frame);
+    can_->write(&frame);
   } catch (const std::exception & e) {
     tools::logger()->warn("{}", e.what());
   }
@@ -115,7 +133,21 @@ std::string CBoard::read_yaml(const std::string & config_path)
     throw std::runtime_error("Missing 'can_interface' in YAML configuration.");
   }
 
-  return yaml["can_interface"].as<std::string>();
+  can_enabled_ = true;
+  if (yaml["can_enabled"]) {
+    can_enabled_ = yaml["can_enabled"].as<bool>();
+  }
+
+  auto can_interface = yaml["can_interface"].as<std::string>();
+  std::string lowered = can_interface;
+  std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char c) {
+    return static_cast<char>(std::tolower(c));
+  });
+  if (lowered.empty() || lowered == "none" || lowered == "off" || lowered == "disabled") {
+    can_enabled_ = false;
+  }
+
+  return can_interface;
 }
 
 }  // namespace io

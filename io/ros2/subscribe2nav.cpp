@@ -10,6 +10,7 @@ Subscribe2Nav::Subscribe2Nav()
 : Node("nav_subscriber"),
   enemy_statue_queue_(1),
   autoaim_target_queue_(1),
+  self_color_("unknown"),
   enemy_status_counter_(0),
   autoaim_target_counter_(0)
 {
@@ -21,7 +22,16 @@ Subscribe2Nav::Subscribe2Nav()
     "autoaim_target", 10,
     std::bind(&Subscribe2Nav::autoaim_target_callback, this, std::placeholders::_1));
 
+  self_color_subscription_ = this->create_subscription<std_msgs::msg::String>(
+    "/referee/self_color", 10,
+    std::bind(&Subscribe2Nav::self_color_callback, this, std::placeholders::_1));
+
   RCLCPP_INFO(this->get_logger(), "nav_subscriber node initialized.");
+}
+
+void Subscribe2Nav::self_color_callback(const std_msgs::msg::String::SharedPtr msg)
+{
+  self_color_ = msg->data;
 }
 
 Subscribe2Nav::~Subscribe2Nav()
@@ -104,5 +114,7 @@ std::vector<int8_t> Subscribe2Nav::subscribe_autoaim_target()
 
   return msg.target_ids;
 }
+
+std::string Subscribe2Nav::subscribe_self_color() { return self_color_; }
 
 }  // namespace io

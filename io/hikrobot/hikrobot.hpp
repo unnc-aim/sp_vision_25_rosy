@@ -40,6 +40,8 @@ private:
   std::atomic<bool> capturing_;
   std::atomic<bool> capture_quit_;
   tools::ThreadSafeQueue<CameraData> queue_;
+  CameraData last_data_;
+  bool has_last_data_;
 
   int vid_, pid_;
   std::string serial_number_;

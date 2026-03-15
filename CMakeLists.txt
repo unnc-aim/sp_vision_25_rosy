@@ -111,10 +111,11 @@ target_link_libraries(planner_test_offline ${OpenCV_LIBS} fmt::fmt yaml-cpp auto
 find_package(ament_cmake QUIET)
 find_package(rclcpp QUIET)
 find_package(std_msgs QUIET)
+find_package(sensor_msgs QUIET)
 find_package(rosidl_typesupport_cpp QUIET)
 find_package(sp_msgs QUIET)
 # 只有在找到 ROS 环境时才会添加 sentry 和 publish_test
-if(ament_cmake_FOUND AND rclcpp_FOUND AND std_msgs_FOUND AND rosidl_typesupport_cpp_FOUND AND sp_msgs_FOUND)
+if(ament_cmake_FOUND AND rclcpp_FOUND AND std_msgs_FOUND AND sensor_msgs_FOUND AND rosidl_typesupport_cpp_FOUND AND sp_msgs_FOUND)
     # 编译 sentry 和 publish_test
     add_executable(sentry src/sentry.cpp)
     add_executable(sentry_bp src/sentry_bp.cpp)
@@ -154,7 +155,7 @@ install(
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-if(ament_cmake_FOUND AND rclcpp_FOUND AND std_msgs_FOUND AND rosidl_typesupport_cpp_FOUND AND sp_msgs_FOUND)
+if(ament_cmake_FOUND AND rclcpp_FOUND AND std_msgs_FOUND AND sensor_msgs_FOUND AND rosidl_typesupport_cpp_FOUND AND sp_msgs_FOUND)
     install(
         TARGETS
             sentry

@@ -1,7 +1,9 @@
 #include "hikrobot.hpp"
 
-#include <cstring>
 #include <libusb-1.0/libusb.h>
+
+#include <algorithm>
+#include <cstring>
 #include <unordered_map>
 
 #include "tools/logger.hpp"
@@ -12,13 +14,15 @@ namespace io
 {
 namespace
 {
+constexpr unsigned int kMvNoData = 0x80000007;  // MV_E_NODATA
+
 std::string to_string_fixed(const unsigned char * chars, size_t max_len)
 {
   size_t len = 0;
   while (len < max_len && chars[len] != '\0') ++len;
   return std::string(reinterpret_cast<const char *>(chars), len);
 }
-}
+}  // namespace
 
 HikRobot::HikRobot(
   double exposure_ms, double gain, const std::string & vid_pid, const std::string & serial_number)
@@ -29,6 +33,7 @@ HikRobot::HikRobot(
   capturing_(false),
   capture_quit_(false),
   queue_(1),
+  has_last_data_(false),
   vid_(-1),
   pid_(-1),
   serial_number_(serial_number)
@@ -41,14 +46,33 @@ HikRobot::HikRobot(
 
     capture_start();
 
-    while (!daemon_quit_) {
-      std::this_thread::sleep_for(100ms);
+    auto retry_sleep = 200ms;
+    int recover_fail_count = 0;
 
-      if (capturing_) continue;
+    while (!daemon_quit_) {
+      std::this_thread::sleep_for(retry_sleep);
+
+      if (capturing_) {
+        retry_sleep = 200ms;
+        recover_fail_count = 0;
+        continue;
+      }
 
       capture_stop();
-      reset_usb();
+
+      // USB reset is expensive; only do it occasionally when repeated recovery fails.
+      if (recover_fail_count % 3 == 2) {
+        reset_usb();
+      }
+
       capture_start();
+
+      if (!capturing_) {
+        recover_fail_count++;
+        retry_sleep = std::min(retry_sleep * 2, 2000ms);
+      } else {
+        retry_sleep = 200ms;
+      }
     }
 
     capture_stop();
@@ -67,7 +91,25 @@ HikRobot::~HikRobot()
 void HikRobot::read(cv::Mat & img, std::chrono::steady_clock::time_point & timestamp)
 {
   CameraData data;
-  queue_.pop(data);
+  if (!queue_.pop_for(data, 50ms)) {
+    if (!has_last_data_) {
+      static auto last_warn = std::chrono::steady_clock::time_point::min();
+      auto now = std::chrono::steady_clock::now();
+      if (
+        last_warn == std::chrono::steady_clock::time_point::min() ||
+        std::chrono::duration_cast<std::chrono::seconds>(now - last_warn).count() >= 1) {
+        tools::logger()->warn("HikRobot read timeout: no frame available yet");
+        last_warn = now;
+      }
+      img = cv::Mat();
+      timestamp = now;
+      return;
+    }
+    data = last_data_;
+  } else {
+    last_data_ = data;
+    has_last_data_ = true;
+  }
 
   img = data.img;
   timestamp = data.timestamp;
@@ -95,8 +137,7 @@ void HikRobot::capture_start()
 
   auto * selected_device = select_device(device_list);
   if (!selected_device) {
-    tools::logger()->warn(
-      "No HikRobot device matched serial_number: \"{}\"", serial_number_);
+    tools::logger()->warn("No HikRobot device matched serial_number: \"{}\"", serial_number_);
     return;
   }
 
@@ -115,6 +156,8 @@ void HikRobot::capture_start()
     return;
   }
 
+  set_enum_value("AcquisitionMode", MV_ACQ_MODE_CONTINUOUS);
+  set_enum_value("TriggerMode", MV_TRIGGER_MODE_OFF);
   set_enum_value("BalanceWhiteAuto", MV_BALANCEWHITE_AUTO_CONTINUOUS);
   set_enum_value("ExposureAuto", MV_EXPOSURE_AUTO_MODE_OFF);
   set_enum_value("GainAuto", MV_GAIN_MODE_OFF);
@@ -131,10 +174,13 @@ void HikRobot::capture_start()
     return;
   }
 
+  // Mark as active before thread launch to avoid daemon race on startup.
+  capturing_ = true;
+
   capture_thread_ = std::thread{[this] {
     tools::logger()->info("HikRobot's capture thread started.");
-
-    capturing_ = true;
+    int timeout_count = 0;
+    auto last_timeout_log = std::chrono::steady_clock::time_point::min();
 
     MV_FRAME_OUT raw;
     MV_CC_PIXEL_CONVERT_PARAM cvt_param;
@@ -147,9 +193,27 @@ void HikRobot::capture_start()
 
       ret = MV_CC_GetImageBuffer(handle_, &raw, nMsec);
       if (ret != MV_OK) {
-        tools::logger()->warn("MV_CC_GetImageBuffer failed: {:#x}", ret);
+        if (ret == kMvNoData) {
+          timeout_count++;
+          auto now = std::chrono::steady_clock::now();
+          if (
+            last_timeout_log == std::chrono::steady_clock::time_point::min() ||
+            std::chrono::duration_cast<std::chrono::seconds>(now - last_timeout_log).count() >= 1) {
+            tools::logger()->warn(
+              "MV_CC_GetImageBuffer timeout: {:#x} ({} consecutive)", ret, timeout_count);
+            last_timeout_log = now;
+          }
+
+          // Tolerate transient no-data periods to avoid endless reconnect churn.
+          if (timeout_count < 15) {
+            continue;
+          }
+        } else {
+          tools::logger()->warn("MV_CC_GetImageBuffer failed: {:#x}", ret);
+        }
         break;
       }
+      timeout_count = 0;
 
       auto timestamp = std::chrono::steady_clock::now();
       cv::Mat img(cv::Size(raw.stFrameInfo.nWidth, raw.stFrameInfo.nHeight), CV_8U, raw.pBufAddr);
@@ -231,7 +295,8 @@ MV_CC_DEVICE_INFO * HikRobot::select_device(const MV_CC_DEVICE_INFO_LIST & devic
 
     if ((device->nTLayerType & MV_USB_DEVICE) == 0) continue;
 
-    auto serial = to_string_fixed(device->SpecialInfo.stUsb3VInfo.chSerialNumber, INFO_MAX_BUFFER_SIZE);
+    auto serial =
+      to_string_fixed(device->SpecialInfo.stUsb3VInfo.chSerialNumber, INFO_MAX_BUFFER_SIZE);
     auto model = to_string_fixed(device->SpecialInfo.stUsb3VInfo.chModelName, INFO_MAX_BUFFER_SIZE);
     tools::logger()->info("HikRobot device[{}]: model={}, serial={}", i, model, serial);
 
