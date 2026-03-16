@@ -213,10 +213,11 @@ int main(int argc, char * argv[])
     /// 全向感知逻辑
     if (tracker.state() == "lost") {
       if (use_usb_cameras && usbcam1 && usbcam2) {
-        command =
-          decider.decide(yolo, gimbal_pos, *usbcam1, *usbcam2, back_camera ? *back_camera : camera);
+        command = decider.decide(
+          yolo, gimbal_pos, *usbcam1, *usbcam2, back_camera ? *back_camera : camera,
+          use_back_camera);
       } else {
-        command = decider.decide(yolo, gimbal_pos, back_camera ? *back_camera : camera);
+        command = decider.decide(yolo, gimbal_pos, back_camera ? *back_camera : camera, use_back_camera);
       }
     } else
       command = aimer.aim(

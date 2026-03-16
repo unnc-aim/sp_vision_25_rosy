@@ -34,6 +34,7 @@ private:
   int open_count_;
   double image_width_, image_height_;
   int usb_gamma_, usb_gain_;
+  bool rotate_180_deg_;
   bool quit_, ok_;
   std::thread capture_thread_;
   std::thread daemon_thread_;

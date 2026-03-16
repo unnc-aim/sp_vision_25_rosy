@@ -38,9 +38,11 @@ usb_gain: 10 #0-96
 #####-----工业相机参数-----#####
 use_back_camera: false
 camera_name: "hikrobot"
+rotate_180_deg: true
 exposure_ms: 8
 gain: 16
-serial_number: "DA8184833"
+serial_number: "DA8184833" # 2026.3.17 当前靶车上的
+# serial_number: "DA7447428"
 vid_pid: "2bdf:0001"
 
 #####-----传统方法参数-----#####

@@ -53,6 +53,7 @@ judge_distance: 2 #距离判断阈值
 auto_fire: true # 是否由自瞄控制射击
 
 camera_name: "mindvision"
+rotate_180_deg: false
 exposure_ms: 2
 gain: 10
 gamma: 0.5

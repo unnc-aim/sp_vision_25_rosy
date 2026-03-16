@@ -13,6 +13,7 @@ USBCamera::USBCamera(const std::string & open_name, const std::string & config_p
 : open_name_(open_name), quit_(false), ok_(false), queue_(1), open_count_(0)
 {
   auto yaml = tools::load(config_path);
+  rotate_180_deg_ = yaml["rotate_180_deg"] ? yaml["rotate_180_deg"].as<bool>() : false;
   image_width_ = tools::read<double>(yaml, "image_width");
   image_height_ = tools::read<double>(yaml, "image_height");
   usb_exposure_ = tools::read<double>(yaml, "usb_exposure");
@@ -144,6 +145,10 @@ void USBCamera::open()
       if (!success) {
         tools::logger()->warn("Failed to read frame, exiting capture thread");
         break;
+      }
+
+      if (rotate_180_deg_ && !img.empty()) {
+        cv::flip(img, img, -1);
       }
 
       auto timestamp = std::chrono::steady_clock::now();

@@ -110,7 +110,7 @@ bool Decider::is_color_allowed(auto_aim::Color armor_color) const
 
 io::Command Decider::decide(
   auto_aim::YOLO & yolo, const Eigen::Vector3d & gimbal_pos, io::USBCamera & usbcam1,
-  io::USBCamera & usbcam2, io::Camera & back_camera)
+  io::USBCamera & usbcam2, io::Camera & back_camera, bool use_back_camera)
 {
   Eigen::Vector2d delta_angle;
   io::USBCamera * cams[] = {&usbcam1, &usbcam2};
@@ -129,16 +129,18 @@ io::Command Decider::decide(
   auto empty = armor_filter(armors);
 
   if (!empty) {
+    std::string camera_name;
     if (count_ == 2) {
-      delta_angle = this->delta_angle(armors, "back");
+      camera_name = use_back_camera ? "back" : "front";
+      delta_angle = this->delta_angle(armors, camera_name);
     } else {
-      delta_angle = this->delta_angle(armors, cams[count_]->device_name);
+      camera_name = cams[count_]->device_name;
+      delta_angle = this->delta_angle(armors, camera_name);
     }
 
     tools::logger()->debug(
       "[{} camera] delta yaw:{:.2f},target pitch:{:.2f},armor number:{},armor name:{}",
-      (count_ == 2 ? "back" : cams[count_]->device_name), delta_angle[0], delta_angle[1],
-      armors.size(), auto_aim::ARMOR_NAMES[armors.front().name]);
+      camera_name, delta_angle[0], delta_angle[1], armors.size(), auto_aim::ARMOR_NAMES[armors.front().name]);
 
     count_ = (count_ + 1) % 3;
 
@@ -153,7 +155,8 @@ io::Command Decider::decide(
 }
 
 io::Command Decider::decide(
-  auto_aim::YOLO & yolo, const Eigen::Vector3d & gimbal_pos, io::Camera & back_cammera)
+  auto_aim::YOLO & yolo, const Eigen::Vector3d & gimbal_pos, io::Camera & back_cammera,
+  bool use_back_camera)
 {
   cv::Mat img;
   std::chrono::steady_clock::time_point timestamp;
@@ -162,10 +165,11 @@ io::Command Decider::decide(
   auto empty = armor_filter(armors);
 
   if (!empty) {
-    auto delta_angle = this->delta_angle(armors, "back");
+    auto camera_name = use_back_camera ? std::string("back") : std::string("front");
+    auto delta_angle = this->delta_angle(armors, camera_name);
     tools::logger()->debug(
-      "[back camera] delta yaw:{:.2f},target pitch:{:.2f},armor number:{},armor name:{}",
-      delta_angle[0], delta_angle[1], armors.size(), auto_aim::ARMOR_NAMES[armors.front().name]);
+      "[{} camera] delta yaw:{:.2f},target pitch:{:.2f},armor number:{},armor name:{}",
+      camera_name, delta_angle[0], delta_angle[1], armors.size(), auto_aim::ARMOR_NAMES[armors.front().name]);
 
     return io::Command{
       true, false, tools::limit_rad(gimbal_pos[0] + delta_angle[0] / 57.3),
@@ -203,6 +207,12 @@ Eigen::Vector2d Decider::delta_angle(
   else if (camera == "right") {
     delta_angle[0] = -62 + (new_fov_h_ / 2) - armors.front().center_norm.x * new_fov_h_;
     delta_angle[1] = armors.front().center_norm.y * new_fov_v_ - new_fov_v_ / 2;
+    return delta_angle;
+  }
+
+  else if (camera == "front") {
+    delta_angle[0] = (fov_h_ / 2) - armors.front().center_norm.x * fov_h_;
+    delta_angle[1] = armors.front().center_norm.y * fov_v_ - fov_v_ / 2;
     return delta_angle;
   }
 

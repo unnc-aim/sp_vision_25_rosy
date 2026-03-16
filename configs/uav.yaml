@@ -23,6 +23,7 @@ use_roi: false
 
 #####-----工业相机参数-----#####
 camera_name: "mindvision"
+rotate_180_deg: false
 exposure_ms: 8
 gamma: 0.6
 vid_pid: "f622:d13a"

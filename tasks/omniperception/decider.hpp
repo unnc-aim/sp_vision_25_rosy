@@ -24,10 +24,11 @@ public:
 
   io::Command decide(
     auto_aim::YOLO & yolo, const Eigen::Vector3d & gimbal_pos, io::USBCamera & usbcam1,
-    io::USBCamera & usbcam2, io::Camera & back_cammera);
+    io::USBCamera & usbcam2, io::Camera & back_cammera, bool use_back_camera = true);
 
   io::Command decide(
-    auto_aim::YOLO & yolo, const Eigen::Vector3d & gimbal_pos, io::Camera & back_cammera);
+    auto_aim::YOLO & yolo, const Eigen::Vector3d & gimbal_pos, io::Camera & back_cammera,
+    bool use_back_camera = true);
 
   io::Command decide(const std::vector<DetectionResult> & detection_queue);
 

@@ -38,6 +38,7 @@ usb_gain: 10 #0-96
 
 #####-----工业相机参数-----#####
 camera_name: "hikrobot"
+rotate_180_deg: true
 exposure_ms: 2
 gain: 16
 vid_pid: "004:0002"

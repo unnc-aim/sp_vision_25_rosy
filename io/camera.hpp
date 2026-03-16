@@ -23,6 +23,7 @@ public:
 
 private:
   std::unique_ptr<CameraBase> camera_;
+  bool rotate_180_deg_;
 };
 
 }  // namespace io
