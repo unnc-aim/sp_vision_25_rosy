@@ -50,6 +50,10 @@ public:
 
   void set_self_color(const std::string & self_color);
 
+  std::string current_search_color_text() const;
+
+  std::string current_self_color_text() const;
+
 private:
   int img_width_;
   int img_height_;
@@ -68,6 +72,8 @@ private:
   std::vector<auto_aim::ArmorName> invincible_armor_;  //无敌状态机器人编号,英雄为1，哨兵为6
 
   bool is_color_allowed(auto_aim::Color armor_color) const;
+
+  void compute_allowed_colors(bool & allow_red, bool & allow_blue) const;
 
   // 定义ArmorName到ArmorPriority的映射类型
   using PriorityMap = std::unordered_map<auto_aim::ArmorName, auto_aim::ArmorPriority>;

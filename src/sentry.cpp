@@ -36,20 +36,28 @@ namespace
 {
 void draw_autoaim_overlay(
   cv::Mat & image, const std::list<auto_aim::Armor> & armors, const io::Command & command,
-  const std::string & tracker_state)
+  const std::string & tracker_state, const std::string & search_color,
+  const std::string & self_color)
 {
   for (const auto & armor : armors) {
+    if (armor.box.width > 0 && armor.box.height > 0) {
+      cv::rectangle(image, armor.box, cv::Scalar(0, 255, 0), 2);
+    }
     tools::draw_points(image, armor.points, {0, 255, 0}, 2);
     auto label = fmt::format(
       "{}:{} {:.2f}", auto_aim::COLORS[armor.color], auto_aim::ARMOR_NAMES[armor.name],
       armor.confidence);
-    tools::draw_text(image, label, armor.center, {0, 255, 0}, 0.6, 1);
+    cv::Point text_pos{armor.box.x, std::max(20, armor.box.y - 8)};
+    tools::draw_text(image, label, text_pos, {0, 255, 0}, 0.6, 2);
   }
+
+  auto color_status = fmt::format("search_color={} self_color={}", search_color, self_color);
+  tools::draw_text(image, color_status, {10, 30}, {255, 255, 0}, 0.8, 2);
 
   auto status = fmt::format(
     "state={} ctrl={} shoot={} yaw={:.3f} pitch={:.3f}", tracker_state, command.control,
     command.shoot, command.yaw, command.pitch);
-  tools::draw_text(image, status, {10, 30}, {0, 255, 255}, 0.7, 2);
+  tools::draw_text(image, status, {10, 60}, {0, 255, 255}, 0.7, 2);
 }
 }  // namespace
 
@@ -184,8 +192,10 @@ int main(int argc, char * argv[])
     }
     ros2.publish_autoaim_command(command);
 
+    auto search_color = decider.current_search_color_text();
+    auto self_color = decider.current_self_color_text();
     cv::Mat autoaim_img = img.clone();
-    draw_autoaim_overlay(autoaim_img, armors, command, tracker.state());
+    draw_autoaim_overlay(autoaim_img, armors, command, tracker.state(), search_color, self_color);
     ros2.publish_autoaim_image(autoaim_img);
 
     /// ROS2通信

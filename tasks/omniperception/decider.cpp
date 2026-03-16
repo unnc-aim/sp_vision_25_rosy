@@ -48,10 +48,10 @@ void Decider::set_self_color(const std::string & self_color)
   }
 }
 
-bool Decider::is_color_allowed(auto_aim::Color armor_color) const
+void Decider::compute_allowed_colors(bool & allow_red, bool & allow_blue) const
 {
-  bool allow_red = false;
-  bool allow_blue = false;
+  allow_red = false;
+  allow_blue = false;
 
   if (aim_red_) allow_red = true;
   if (aim_blue_) allow_blue = true;
@@ -78,6 +78,30 @@ bool Decider::is_color_allowed(auto_aim::Color armor_color) const
     allow_red = (enemy_color_ == auto_aim::Color::red);
     allow_blue = (enemy_color_ == auto_aim::Color::blue);
   }
+}
+
+std::string Decider::current_search_color_text() const
+{
+  bool allow_red = false;
+  bool allow_blue = false;
+  compute_allowed_colors(allow_red, allow_blue);
+  if (allow_red && allow_blue) return "red|blue";
+  if (allow_red) return "red";
+  if (allow_blue) return "blue";
+  return "none";
+}
+
+std::string Decider::current_self_color_text() const
+{
+  if (!self_color_.has_value()) return "unknown";
+  return self_color_.value() == auto_aim::Color::red ? "red" : "blue";
+}
+
+bool Decider::is_color_allowed(auto_aim::Color armor_color) const
+{
+  bool allow_red = false;
+  bool allow_blue = false;
+  compute_allowed_colors(allow_red, allow_blue);
 
   if (armor_color == auto_aim::Color::red) return allow_red;
   if (armor_color == auto_aim::Color::blue) return allow_blue;

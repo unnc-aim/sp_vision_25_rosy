@@ -11,7 +11,9 @@ bool exiter_inited_ = false;
 Exiter::Exiter()
 {
   if (exiter_inited_) throw std::runtime_error("Multiple Exiter instances!");
-  std::signal(SIGINT, [](int) { exit_ = true; });
+  auto handler = [](int) { exit_ = true; };
+  std::signal(SIGINT, handler);
+  std::signal(SIGTERM, handler);
   exiter_inited_ = true;
 }
 
