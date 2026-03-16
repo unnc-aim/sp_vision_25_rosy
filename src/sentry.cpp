@@ -42,6 +42,7 @@ void draw_autoaim_overlay(
   const std::string & self_color, double fps, const std::optional<cv::Point> & aim_point_px,
   const std::optional<double> & final_x)
 {
+  tools::logger()->debug("draw_autoaim_overlay: armors.size()={}, first box: x={} y={} w={} h={}", armors.size(), armors.empty() ? 0 : armors.begin()->box.x, armors.empty() ? 0 : armors.begin()->box.y, armors.empty() ? 0 : armors.begin()->box.width, armors.empty() ? 0 : armors.begin()->box.height);
   for (const auto & armor : armors) {
     if (armor.box.width > 0 && armor.box.height > 0) {
       cv::rectangle(image, armor.box, cv::Scalar(0, 255, 0), 2);
@@ -73,7 +74,7 @@ void draw_autoaim_overlay(
     tools::draw_text(image, label, text_pos, {0, 255, 0}, 0.6, 2);
   }
 
-  auto color_status = fmt::format("search_color={} self_color={}", search_color, self_color);
+  auto color_status = fmt::format("self_color={} search_color={}", search_color, self_color);
   tools::draw_text(image, color_status, {10, 30}, {255, 255, 0}, 0.8, 2);
 
   auto status = fmt::format(
@@ -84,10 +85,10 @@ void draw_autoaim_overlay(
   auto fps_text = fmt::format("fps={:.1f}", fps);
   tools::draw_text(image, fps_text, {10, 90}, {255, 255, 255}, 0.7, 2);
 
-  if (final_x.has_value()) {
-    auto final_x_text = fmt::format("final_x={:.3f}", final_x.value());
-    tools::draw_text(image, final_x_text, {10, 120}, {255, 255, 255}, 0.7, 2);
-  }
+  // if (final_x.has_value()) {
+  //   auto final_x_text = fmt::format("final_x={:.3f}", final_x.value());
+  //   tools::draw_text(image, final_x_text, {10, 120}, {255, 255, 255}, 0.7, 2);
+  // }
 
   if (aim_point_px.has_value()) {
     auto p = aim_point_px.value();
@@ -195,6 +196,7 @@ int main(int argc, char * argv[])
     Eigen::Vector3d gimbal_pos = tools::eulers(solver.R_gimbal2world(), 2, 1, 0);
 
     auto armors = yolo.detect(img);
+    tools::logger()->debug("After yolo.detect: armors.size()={}", armors.size());
 
     decider.set_self_color(ros2.subscribe_self_color());
 
@@ -202,6 +204,7 @@ int main(int argc, char * argv[])
 
     decider.armor_filter(armors);
 
+    tools::logger()->debug("After armor_filter: armors.size()={}", armors.size());
     // decider.get_auto_aim_target(armors, ros2.subscribe_autoaim_target());
 
     decider.set_priority(armors);

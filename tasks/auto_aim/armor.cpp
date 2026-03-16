@@ -100,7 +100,7 @@ Armor::Armor(
 Armor::Armor(
   int class_id, float confidence, const cv::Rect & box, std::vector<cv::Point2f> armor_keypoints,
   cv::Point2f offset)
-: class_id(class_id), confidence(confidence), box(box), points(armor_keypoints)
+: class_id(class_id), confidence(confidence), box(box + cv::Point(static_cast<int>(offset.x), static_cast<int>(offset.y))), points(armor_keypoints)
 {
   std::transform(
     armor_keypoints.begin(), armor_keypoints.end(), armor_keypoints.begin(),
@@ -183,7 +183,7 @@ Armor::Armor(
 Armor::Armor(
   int color_id, int num_id, float confidence, const cv::Rect & box,
   std::vector<cv::Point2f> armor_keypoints, cv::Point2f offset)
-: confidence(confidence), box(box), points(armor_keypoints)
+: confidence(confidence), box(box + cv::Point(static_cast<int>(offset.x), static_cast<int>(offset.y))), points(armor_keypoints)
 {
   std::transform(
     armor_keypoints.begin(), armor_keypoints.end(), armor_keypoints.begin(),
