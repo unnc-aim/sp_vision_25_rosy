@@ -21,17 +21,14 @@ public:
 
   std::string state() const;
 
-  std::list<Target> track(
-    std::list<Armor> & armors, std::chrono::steady_clock::time_point t,
-    bool use_enemy_color = true);
+  std::list<Target> track(std::list<Armor> & armors, std::chrono::steady_clock::time_point t);
 
   std::tuple<omniperception::DetectionResult, std::list<Target>> track(
     const std::vector<omniperception::DetectionResult> & detection_queue, std::list<Armor> & armors,
-    std::chrono::steady_clock::time_point t, bool use_enemy_color = true);
+    std::chrono::steady_clock::time_point t);
 
 private:
   Solver & solver_;
-  Color enemy_color_;
   int min_detect_count_;
   int max_temp_lost_count_;
   int detect_count_;

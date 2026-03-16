@@ -25,8 +25,6 @@ Decider::Decider(const std::string & config_path)
   fov_v_ = yaml["fov_v"].as<double>();
   new_fov_h_ = yaml["new_fov_h"].as<double>();
   new_fov_v_ = yaml["new_fov_v"].as<double>();
-  enemy_color_ =
-    (yaml["enemy_color"].as<std::string>() == "red") ? auto_aim::Color::red : auto_aim::Color::blue;
 
   // 四个开关是“或”关系，只要命中任一条件就允许该颜色。
   if (yaml["auto_aim_ally"]) aim_ally_ = yaml["auto_aim_ally"].as<bool>();
@@ -71,12 +69,6 @@ void Decider::compute_allowed_colors(bool & allow_red, bool & allow_blue) const
         allow_red = true;
       }
     }
-  }
-
-  // 兜底：如果四个开关都没有形成有效颜色集合，则沿用历史enemy_color行为。
-  if (!allow_red && !allow_blue) {
-    allow_red = (enemy_color_ == auto_aim::Color::red);
-    allow_blue = (enemy_color_ == auto_aim::Color::blue);
   }
 }
 
@@ -139,8 +131,8 @@ io::Command Decider::decide(
     }
 
     tools::logger()->debug(
-      "[{} camera] delta yaw:{:.2f},target pitch:{:.2f},armor number:{},armor name:{}",
-      camera_name, delta_angle[0], delta_angle[1], armors.size(), auto_aim::ARMOR_NAMES[armors.front().name]);
+      "[{} camera] delta yaw:{:.2f},target pitch:{:.2f},armor number:{},armor name:{}", camera_name,
+      delta_angle[0], delta_angle[1], armors.size(), auto_aim::ARMOR_NAMES[armors.front().name]);
 
     count_ = (count_ + 1) % 3;
 
@@ -168,8 +160,8 @@ io::Command Decider::decide(
     auto camera_name = use_back_camera ? std::string("back") : std::string("front");
     auto delta_angle = this->delta_angle(armors, camera_name);
     tools::logger()->debug(
-      "[{} camera] delta yaw:{:.2f},target pitch:{:.2f},armor number:{},armor name:{}",
-      camera_name, delta_angle[0], delta_angle[1], armors.size(), auto_aim::ARMOR_NAMES[armors.front().name]);
+      "[{} camera] delta yaw:{:.2f},target pitch:{:.2f},armor number:{},armor name:{}", camera_name,
+      delta_angle[0], delta_angle[1], armors.size(), auto_aim::ARMOR_NAMES[armors.front().name]);
 
     return io::Command{
       true, false, tools::limit_rad(gimbal_pos[0] + delta_angle[0] / 57.3),

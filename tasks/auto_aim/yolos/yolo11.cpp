@@ -59,6 +59,23 @@ YOLO11::YOLO11(const std::string & config_path, bool debug)
     compiled_model_ = core_.compile_model(
       model, device_, ov::hint::performance_mode(ov::hint::PerformanceMode::LATENCY));
   }
+
+  std::string execution_devices_text = "unknown";
+  try {
+    auto execution_devices = compiled_model_.get_property(ov::execution_devices);
+    if (!execution_devices.empty()) {
+      execution_devices_text = execution_devices.front();
+      for (size_t i = 1; i < execution_devices.size(); ++i) {
+        execution_devices_text += "," + execution_devices[i];
+      }
+    }
+  } catch (const ov::Exception & e) {
+    tools::logger()->warn("Failed to query YOLO11 execution devices: {}", e.what());
+  }
+
+  tools::logger()->info(
+    "YOLO11 OpenVINO requested device=\"{}\", final execution devices=\"{}\"", device_,
+    execution_devices_text);
 }
 
 std::list<Armor> YOLO11::detect(const cv::Mat & raw_img, int frame_count)

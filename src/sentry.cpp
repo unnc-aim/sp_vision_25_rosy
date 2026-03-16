@@ -42,7 +42,6 @@ void draw_autoaim_overlay(
   const std::string & self_color, double fps, const std::optional<cv::Point> & aim_point_px,
   const std::optional<double> & final_x)
 {
-  tools::logger()->debug("draw_autoaim_overlay: armors.size()={}, first box: x={} y={} w={} h={}", armors.size(), armors.empty() ? 0 : armors.begin()->box.x, armors.empty() ? 0 : armors.begin()->box.y, armors.empty() ? 0 : armors.begin()->box.width, armors.empty() ? 0 : armors.begin()->box.height);
   for (const auto & armor : armors) {
     if (armor.box.width > 0 && armor.box.height > 0) {
       cv::rectangle(image, armor.box, cv::Scalar(0, 255, 0), 2);
@@ -74,7 +73,7 @@ void draw_autoaim_overlay(
     tools::draw_text(image, label, text_pos, {0, 255, 0}, 0.6, 2);
   }
 
-  auto color_status = fmt::format("self_color={} search_color={}", search_color, self_color);
+  auto color_status = fmt::format("self_color={} search_color={}", self_color, search_color);
   tools::draw_text(image, color_status, {10, 30}, {255, 255, 0}, 0.8, 2);
 
   auto status = fmt::format(
@@ -196,17 +195,12 @@ int main(int argc, char * argv[])
     Eigen::Vector3d gimbal_pos = tools::eulers(solver.R_gimbal2world(), 2, 1, 0);
 
     auto armors = yolo.detect(img);
-    tools::logger()->debug("After yolo.detect: armors.size()={}", armors.size());
-
     decider.set_self_color(ros2.subscribe_self_color());
 
     decider.get_invincible_armor(ros2.subscribe_enemy_status());
 
     decider.armor_filter(armors);
-
-    tools::logger()->debug("After armor_filter: armors.size()={}", armors.size());
     // decider.get_auto_aim_target(armors, ros2.subscribe_autoaim_target());
-
     decider.set_priority(armors);
 
     auto targets = tracker.track(armors, timestamp);
@@ -220,7 +214,8 @@ int main(int argc, char * argv[])
           yolo, gimbal_pos, *usbcam1, *usbcam2, back_camera ? *back_camera : camera,
           use_back_camera);
       } else {
-        command = decider.decide(yolo, gimbal_pos, back_camera ? *back_camera : camera, use_back_camera);
+        command =
+          decider.decide(yolo, gimbal_pos, back_camera ? *back_camera : camera, use_back_camera);
       }
     } else
       command = aimer.aim(
@@ -245,6 +240,7 @@ int main(int argc, char * argv[])
       std::chrono::duration_cast<std::chrono::milliseconds>(now - fps_window_begin).count();
     if (fps_elapsed >= 1000) {
       publish_fps = fps_window_frames * 1000.0 / static_cast<double>(fps_elapsed);
+      // tools::logger()->info("AutoAim FPS: {:.1f}", publish_fps);
       fps_window_begin = now;
       fps_window_frames = 0;
     }

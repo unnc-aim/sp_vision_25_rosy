@@ -63,7 +63,6 @@ private:
   int mode_;
   int count_;
 
-  auto_aim::Color enemy_color_;
   bool aim_ally_;
   bool aim_enemy_;
   bool aim_red_;
