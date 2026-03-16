@@ -10,6 +10,7 @@ Subscribe2Nav::Subscribe2Nav()
 : Node("nav_subscriber"),
   enemy_statue_queue_(1),
   autoaim_target_queue_(1),
+  imu_queue_(1),
   self_color_("unknown"),
   enemy_status_counter_(0),
   autoaim_target_counter_(0)
@@ -26,7 +27,12 @@ Subscribe2Nav::Subscribe2Nav()
     "/referee/self_color", 10,
     std::bind(&Subscribe2Nav::self_color_callback, this, std::placeholders::_1));
 
-  RCLCPP_INFO(this->get_logger(), "nav_subscriber node initialized.");
+  // Subscribe to IMU data from EtherCAT controller
+  imu_subscription_ = this->create_subscription<sensor_msgs::msg::Imu>(
+    "/ecat/sn4587585/app2/read", 10,
+    std::bind(&Subscribe2Nav::imu_callback, this, std::placeholders::_1));
+
+  RCLCPP_INFO(this->get_logger(), "nav_subscriber node initialized with IMU subscription.");
 }
 
 void Subscribe2Nav::self_color_callback(const std_msgs::msg::String::SharedPtr msg)
@@ -79,6 +85,12 @@ void Subscribe2Nav::autoaim_target_callback(const sp_msgs::msg::AutoaimTargetMsg
   }
 }
 
+void Subscribe2Nav::imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
+{
+  imu_queue_.clear();
+  imu_queue_.push(*msg);
+}
+
 void Subscribe2Nav::start()
 {
   RCLCPP_INFO(this->get_logger(), "nav_subscriber node Starting to spin...");
@@ -116,5 +128,22 @@ std::vector<int8_t> Subscribe2Nav::subscribe_autoaim_target()
 }
 
 std::string Subscribe2Nav::subscribe_self_color() { return self_color_; }
+
+Eigen::Quaterniond Subscribe2Nav::subscribe_imu()
+{
+  if (imu_queue_.empty()) {
+    return Eigen::Quaterniond::Identity();
+  }
+  sensor_msgs::msg::Imu msg;
+  imu_queue_.back(msg);
+  
+  Eigen::Quaterniond q;
+  q.w() = msg.orientation.w;
+  q.x() = msg.orientation.x;
+  q.y() = msg.orientation.y;
+  q.z() = msg.orientation.z;
+  
+  return q;
+}
 
 }  // namespace io

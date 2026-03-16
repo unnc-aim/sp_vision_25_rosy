@@ -117,7 +117,11 @@ io::Command Aimer::aim(
 
   // 计算最终角度
   Eigen::Vector3d final_xyz = debug_aim_point.xyza.head(3);
-  double yaw = std::atan2(final_xyz.y(), final_xyz.x()) + yaw_offset_;
+  double raw_yaw = std::atan2(final_xyz.y(), final_xyz.x());
+  // 视差补偿：相机偏移导致的角度误差
+  double d = std::sqrt(final_xyz.x() * final_xyz.x() + final_xyz.y() * final_xyz.y());
+  double parallax_compensation = 0.065 / d;  // 相机前向偏移 0.065m
+  double yaw = raw_yaw + yaw_offset_;  // 暂时使用简单补偿
   double pitch = -(current_traj.pitch + pitch_offset_);  //世界坐标系下pitch向上为负
   return {true, false, yaw, pitch};
 }

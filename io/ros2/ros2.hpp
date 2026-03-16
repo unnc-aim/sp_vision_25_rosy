@@ -2,6 +2,7 @@
 #define IO__ROS2_HPP
 
 #include <opencv2/core/mat.hpp>
+#include <Eigen/Geometry>
 
 #include "io/command.hpp"
 #include "publish2nav.hpp"
@@ -29,6 +30,8 @@ public:
   std::vector<int8_t> subscribe_autoaim_target();
 
   std::string subscribe_self_color();
+
+  Eigen::Quaterniond subscribe_imu();
 
   template <typename T>
   std::shared_ptr<rclcpp::Publisher<T>> create_publisher(

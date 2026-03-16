@@ -186,6 +186,8 @@ int main(int argc, char * argv[])
     Eigen::Quaterniond q = Eigen::Quaterniond::Identity();
     if (cboard) {
       q = cboard->imu_at(timestamp - 1ms);
+    } else {
+      q = ros2.subscribe_imu();
     }
     // recorder.record(img, q, timestamp);
 
