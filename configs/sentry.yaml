@@ -89,8 +89,8 @@ auto_fire: true # 是否由自瞄控制射击
 mode: 1
 auto_aim_ally: false
 auto_aim_enemy: true
-auto_aim_red: true
-auto_aim_blue: true
+auto_aim_red: false
+auto_aim_blue: false
 
 #####-----工业相机标定参数-----#####
 R_gimbal2imubody: [1, 0, 0, 0, 1, 0, 0, 0, 1]

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>sp_vision</name>
+  <version>0.1.0</version>
+  <description>SP vision package built with CMake and optional ROS2 executables.</description>
+
+  <maintainer email="infantry@example.com">infantry</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>cmake</buildtool_depend>
+
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+</package>
