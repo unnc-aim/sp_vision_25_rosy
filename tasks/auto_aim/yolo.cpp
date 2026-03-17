@@ -2,18 +2,55 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include "detector.hpp"
+#include "tools/logger.hpp"
 #include "yolos/yolo11.hpp"
 #include "yolos/yolov5.hpp"
 #include "yolos/yolov8.hpp"
 
 namespace auto_aim
 {
+namespace
+{
+class TraditionalBackend : public YOLOBase
+{
+public:
+  explicit TraditionalBackend(const std::string & config_path) : detector_(config_path, false)
+  {
+    tools::logger()->info("AutoAim backend: traditional detector (use_traditional=true)");
+  }
+
+  std::list<Armor> detect(const cv::Mat & img, int frame_count) override
+  {
+    return detector_.detect(img, frame_count);
+  }
+
+  std::list<Armor> postprocess(
+    double scale, cv::Mat & output, const cv::Mat & bgr_img, int frame_count) override
+  {
+    (void)scale;
+    (void)output;
+    (void)bgr_img;
+    (void)frame_count;
+    return {};
+  }
+
+private:
+  Detector detector_;
+};
+}  // namespace
+
 YOLO::YOLO(const std::string & config_path, bool debug)
 {
   auto yaml = YAML::LoadFile(config_path);
   auto yolo_name = yaml["yolo_name"].as<std::string>();
+  const bool use_traditional = yaml["use_traditional"] ? yaml["use_traditional"].as<bool>() : false;
 
-  if (yolo_name == "yolov8") {
+  if (use_traditional) {
+    yolo_ = std::make_unique<TraditionalBackend>(config_path);
+  }
+
+  else if (yolo_name == "yolov8") {
     yolo_ = std::make_unique<YOLOV8>(config_path, debug);
   }
 
