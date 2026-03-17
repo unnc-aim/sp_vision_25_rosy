@@ -30,6 +30,7 @@ public:
 private:
   Solver & solver_;
   int min_detect_count_;
+  bool use_kalman_;
   int max_temp_lost_count_;
   int detect_count_;
   int temp_lost_count_;

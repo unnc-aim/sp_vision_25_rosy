@@ -20,9 +20,12 @@ Tracker::Tracker(const std::string & config_path, Solver & solver)
 {
   auto yaml = YAML::LoadFile(config_path);
   min_detect_count_ = yaml["min_detect_count"].as<int>();
+  use_kalman_ = yaml["use_kalman"] ? yaml["use_kalman"].as<bool>() : true;
   max_temp_lost_count_ = yaml["max_temp_lost_count"].as<int>();
   outpost_max_temp_lost_count_ = yaml["outpost_max_temp_lost_count"].as<int>();
   normal_temp_lost_count_ = max_temp_lost_count_;
+
+  // tools::logger()->info("[Tracker] use_kalman={}", use_kalman_ ? "true" : "false");
 }
 
 std::string Tracker::state() const { return state_; }
@@ -262,6 +265,11 @@ bool Tracker::set_target(std::list<Armor> & armors, std::chrono::steady_clock::t
 
 bool Tracker::update_target(std::list<Armor> & armors, std::chrono::steady_clock::time_point t)
 {
+  if (!use_kalman_) {
+    // Kalman disabled: directly rebuild target from current detections every frame.
+    return set_target(armors, t);
+  }
+
   target_.predict(t);
 
   int found_count = 0;
