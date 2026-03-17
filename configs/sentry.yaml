@@ -1,3 +1,39 @@
+#####-----decider参数-----#####
+auto_aim_ally: false
+auto_aim_enemy: true
+auto_aim_red: false
+auto_aim_blue: false
+
+mode: 1
+
+# ^这个不给文档就不好意思了哈
+#
+# const PriorityMap mode1 = {
+#   {auto_aim::ArmorName::one, auto_aim::ArmorPriority::second},
+#   {auto_aim::ArmorName::two, auto_aim::ArmorPriority::forth},
+#   {auto_aim::ArmorName::three, auto_aim::ArmorPriority::first},
+#   {auto_aim::ArmorName::four, auto_aim::ArmorPriority::first},
+#   {auto_aim::ArmorName::five, auto_aim::ArmorPriority::third},
+#   {auto_aim::ArmorName::sentry, auto_aim::ArmorPriority::third},
+#   {auto_aim::ArmorName::outpost, auto_aim::ArmorPriority::fifth},
+#   {auto_aim::ArmorName::base, auto_aim::ArmorPriority::fifth},
+#   {auto_aim::ArmorName::not_armor, auto_aim::ArmorPriority::fifth}};
+
+# const PriorityMap mode2 = {
+#   {auto_aim::ArmorName::two, auto_aim::ArmorPriority::first},
+#   {auto_aim::ArmorName::one, auto_aim::ArmorPriority::second},
+#   {auto_aim::ArmorName::three, auto_aim::ArmorPriority::second},
+#   {auto_aim::ArmorName::four, auto_aim::ArmorPriority::second},
+#   {auto_aim::ArmorName::five, auto_aim::ArmorPriority::second},
+#   {auto_aim::ArmorName::sentry, auto_aim::ArmorPriority::third},
+#   {auto_aim::ArmorName::outpost, auto_aim::ArmorPriority::third},
+#   {auto_aim::ArmorName::base, auto_aim::ArmorPriority::third},
+#   {auto_aim::ArmorName::not_armor, auto_aim::ArmorPriority::third}};
+
+#####-----日志/Profiler参数-----#####
+profile_log_enabled: true
+profile_log_flush_every: 200 # 每10帧刷新一次日志
+
 #####-----神经网络参数-----#####
 yolo_name: yolov5
 classify_model: assets/tiny_resnet.onnx
@@ -83,13 +119,6 @@ second_tolerance: 2 # 远距离射击容差，degree
 judge_distance: 3 #距离判断阈值
 auto_fire: true # 是否由自瞄控制射击
 
-#####-----decider参数-----#####
-mode: 1
-auto_aim_ally: false
-auto_aim_enemy: true
-auto_aim_red: false
-auto_aim_blue: false
-
 #####-----工业相机标定参数-----#####
 R_gimbal2imubody: [1, 0, 0, 0, 1, 0, 0, 0, 1]
 
@@ -101,4 +130,4 @@ distort_coeffs: [-0.0209453389287673, 0.15028138841073832, -0.000651772211323450
 # 标定板到世界坐标系原点的水平距离: 1.20 m
 # 标定板同竖直摆放时的偏角: yaw123.89 pitch14.05 roll-0.86 degree
 R_camera2gimbal: [0.01928451708725664, 0.00012696140743255463, 0.99981402834802846, -0.99981344688553653, -0.0010834913551969569, 0.019284643459122196, 0.0010857382619952124, -0.99999940496346484, 0.00010604311483339372]
-t_camera2gimbal: [0.065, 0.0, 0.122]
+t_camera2gimbal: [0.1284, 0.0, 0.0552]
