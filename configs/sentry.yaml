@@ -4,7 +4,7 @@ auto_aim_enemy: true
 auto_aim_red: false
 auto_aim_blue: false
 
-mode: 1
+autoaim_decide_mode: 1
 
 # ^这个不给文档就不好意思了哈
 #
@@ -30,9 +30,10 @@ mode: 1
 #   {auto_aim::ArmorName::base, auto_aim::ArmorPriority::third},
 #   {auto_aim::ArmorName::not_armor, auto_aim::ArmorPriority::third}};
 
-#####-----日志/Profiler参数-----#####
+#####-----日志/Profiler/ros2图像节点参数-----#####
 profile_log_enabled: true
 profile_log_flush_every: 200 # 每10帧刷新一次日志
+enable_ros2_image_publish: true # false 时不发布 /sp_vision/image_raw 与 /sp_vision/image_autoaim
 
 #####-----神经网络参数-----#####
 yolo_name: yolov5

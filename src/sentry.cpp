@@ -132,6 +132,11 @@ int main(int argc, char * argv[])
     profile_log_enabled = yaml["profile_log_enabled"].as<bool>();
   }
 
+  bool enable_ros2_image_publish = true;
+  if (yaml["enable_ros2_image_publish"]) {
+    enable_ros2_image_publish = yaml["enable_ros2_image_publish"].as<bool>();
+  }
+
   std::size_t profile_log_flush_every = 200;
   if (yaml["profile_log_flush_every"]) {
     profile_log_flush_every = yaml["profile_log_flush_every"].as<std::size_t>();
@@ -196,18 +201,20 @@ int main(int argc, char * argv[])
     if (img.empty()) {
       cv::Mat placeholder(720, 1280, CV_8UC3, cv::Scalar(0, 0, 0));
       tools::draw_text(placeholder, "SP Vision: no camera frame", {30, 60}, {0, 0, 255}, 1.0, 2);
-      {
-        tools::ProfileScope scope(profile_log, "ros2.publish_raw_image");
-        ros2.publish_raw_image(placeholder);
-      }
-      {
-        tools::ProfileScope scope(profile_log, "ros2.publish_autoaim_image");
-        ros2.publish_autoaim_image(placeholder);
+      if (enable_ros2_image_publish) {
+        {
+          tools::ProfileScope scope(profile_log, "ros2.publish_raw_image");
+          ros2.publish_raw_image(placeholder);
+        }
+        {
+          tools::ProfileScope scope(profile_log, "ros2.publish_autoaim_image");
+          ros2.publish_autoaim_image(placeholder);
+        }
       }
       continue;
     }
 
-    {
+    if (enable_ros2_image_publish) {
       tools::ProfileScope scope(profile_log, "ros2.publish_raw_image");
       ros2.publish_raw_image(img);
     }
@@ -271,21 +278,20 @@ int main(int argc, char * argv[])
     if (tracker.state() == "lost") {
       if (use_usb_cameras && usbcam1 && usbcam2) {
         tools::ProfileScope scope(profile_log, "decider.decide.multi_camera");
-        command =
-          decider.decide(yolo, gimbal_pos, *usbcam1, *usbcam2, back_camera ? *back_camera : camera,
-            use_back_camera);
+        command = decider.decide(
+          yolo, gimbal_pos, *usbcam1, *usbcam2, back_camera ? *back_camera : camera,
+          use_back_camera);
       } else {
         tools::ProfileScope scope(profile_log, "decider.decide.single_camera");
         command =
           decider.decide(yolo, gimbal_pos, back_camera ? *back_camera : camera, use_back_camera);
       }
-    } else
-      {
-        tools::ProfileScope scope(profile_log, "aimer.aim");
-        command = aimer.aim(
-          targets, timestamp, cboard ? cboard->bullet_speed : 0.0,
-          cboard ? cboard->shoot_mode : io::ShootMode::left_shoot);
-      }
+    } else {
+      tools::ProfileScope scope(profile_log, "aimer.aim");
+      command = aimer.aim(
+        targets, timestamp, cboard ? cboard->bullet_speed : 0.0,
+        cboard ? cboard->shoot_mode : io::ShootMode::left_shoot);
+    }
 
     /// 发射逻辑
     {
@@ -343,7 +349,7 @@ int main(int argc, char * argv[])
         autoaim_img, armors, command, tracker.state(), search_color, self_color, publish_fps,
         aim_point_px, final_x);
     }
-    {
+    if (enable_ros2_image_publish) {
       tools::ProfileScope scope(profile_log, "ros2.publish_autoaim_image");
       ros2.publish_autoaim_image(autoaim_img);
     }

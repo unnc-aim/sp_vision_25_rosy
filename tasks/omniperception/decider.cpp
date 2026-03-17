@@ -32,7 +32,7 @@ Decider::Decider(const std::string & config_path)
   if (yaml["auto_aim_red"]) aim_red_ = yaml["auto_aim_red"].as<bool>();
   if (yaml["auto_aim_blue"]) aim_blue_ = yaml["auto_aim_blue"].as<bool>();
 
-  mode_ = yaml["mode"].as<double>();
+  mode_ = yaml["autoaim_decide_mode"].as<double>();
 }
 
 void Decider::set_self_color(const std::string & self_color)
