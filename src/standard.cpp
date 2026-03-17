@@ -1,4 +1,5 @@
 #include <fmt/core.h>
+#include <yaml-cpp/yaml.h>
 
 #include <chrono>
 #include <nlohmann/json.hpp>
@@ -18,6 +19,7 @@
 #include "tools/logger.hpp"
 #include "tools/math_tools.hpp"
 #include "tools/plotter.hpp"
+#include "tools/profile_log.hpp"
 #include "tools/recorder.hpp"
 
 using namespace std::chrono;
@@ -35,6 +37,17 @@ int main(int argc, char * argv[])
     return 0;
   }
 
+  auto yaml = YAML::LoadFile(config_path);
+  bool profile_log_enabled = true;
+  if (yaml["profile_log_enabled"]) {
+    profile_log_enabled = yaml["profile_log_enabled"].as<bool>();
+  }
+
+  std::size_t profile_log_flush_every = 200;
+  if (yaml["profile_log_flush_every"]) {
+    profile_log_flush_every = yaml["profile_log_flush_every"].as<std::size_t>();
+  }
+
   tools::Exiter exiter;
   tools::Plotter plotter;
   tools::Recorder recorder;
@@ -49,6 +62,8 @@ int main(int argc, char * argv[])
   auto_aim::Aimer aimer(config_path);
   auto_aim::Shooter shooter(config_path);
 
+  tools::ProfileLog profile_log("standard_profile", profile_log_flush_every, profile_log_enabled);
+
   cv::Mat img;
   Eigen::Quaterniond q;
   std::chrono::steady_clock::time_point t;
@@ -57,8 +72,17 @@ int main(int argc, char * argv[])
   auto last_mode = io::Mode::idle;
 
   while (!exiter.exit()) {
-    camera.read(img, t);
-    q = cboard.imu_at(t - 1ms);
+    profile_log.next_frame();
+    tools::ProfileScope loop_scope(profile_log, "loop.total");
+
+    {
+      tools::ProfileScope scope(profile_log, "camera.read");
+      camera.read(img, t);
+    }
+    {
+      tools::ProfileScope scope(profile_log, "cboard.imu_at");
+      q = cboard.imu_at(t - 1ms);
+    }
     mode = cboard.mode;
 
     if (last_mode != mode) {
@@ -68,18 +92,43 @@ int main(int argc, char * argv[])
 
     // recorder.record(img, q, t);
 
-    solver.set_R_gimbal2world(q);
+    {
+      tools::ProfileScope scope(profile_log, "solver.set_R_gimbal2world");
+      solver.set_R_gimbal2world(q);
+    }
 
-    Eigen::Vector3d ypr = tools::eulers(solver.R_gimbal2world(), 2, 1, 0);
+    Eigen::Vector3d ypr;
+    {
+      tools::ProfileScope scope(profile_log, "tools.eulers");
+      ypr = tools::eulers(solver.R_gimbal2world(), 2, 1, 0);
+    }
 
-    auto armors = detector.detect(img);
+    std::list<auto_aim::Armor> armors;
+    {
+      tools::ProfileScope scope(profile_log, "detector.yolo.detect");
+      armors = detector.detect(img);
+    }
 
-    auto targets = tracker.track(armors, t);
+    std::list<auto_aim::Target> targets;
+    {
+      tools::ProfileScope scope(profile_log, "tracker.track");
+      targets = tracker.track(armors, t);
+    }
 
-    auto command = aimer.aim(targets, t, cboard.bullet_speed);
+    io::Command command;
+    {
+      tools::ProfileScope scope(profile_log, "aimer.aim");
+      command = aimer.aim(targets, t, cboard.bullet_speed);
+    }
 
-    cboard.send(command);
-    ros2.publish_autoaim_command(command);
+    {
+      tools::ProfileScope scope(profile_log, "cboard.send");
+      cboard.send(command);
+    }
+    {
+      tools::ProfileScope scope(profile_log, "ros2.publish_autoaim_command");
+      ros2.publish_autoaim_command(command);
+    }
   }
 
   return 0;

@@ -10,6 +10,7 @@ add_library(tools OBJECT
     trajectory.cpp
     recorder.cpp
     logger.cpp
+    profile_log.cpp
     pid.cpp
     crc.cpp
 )

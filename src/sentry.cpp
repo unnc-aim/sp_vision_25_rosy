@@ -26,6 +26,7 @@
 #include "tools/logger.hpp"
 #include "tools/math_tools.hpp"
 #include "tools/plotter.hpp"
+#include "tools/profile_log.hpp"
 #include "tools/recorder.hpp"
 
 using namespace std::chrono;
@@ -126,6 +127,16 @@ int main(int argc, char * argv[])
     use_back_camera = yaml["use_back_camera"].as<bool>();
   }
 
+  bool profile_log_enabled = true;
+  if (yaml["profile_log_enabled"]) {
+    profile_log_enabled = yaml["profile_log_enabled"].as<bool>();
+  }
+
+  std::size_t profile_log_flush_every = 200;
+  if (yaml["profile_log_flush_every"]) {
+    profile_log_flush_every = yaml["profile_log_flush_every"].as<std::size_t>();
+  }
+
   auto config_dir = std::filesystem::path(config_path).parent_path();
   auto back_camera_config = (config_dir / "camera.yaml").string();
 
@@ -161,6 +172,8 @@ int main(int argc, char * argv[])
   auto_aim::Aimer aimer(config_path);
   auto_aim::Shooter shooter(config_path);
 
+  tools::ProfileLog profile_log("sentry_profile", profile_log_flush_every, profile_log_enabled);
+
   omniperception::Decider decider(config_path);
 
   cv::Mat img;
@@ -172,65 +185,122 @@ int main(int argc, char * argv[])
   io::Command last_command;
 
   while (!exiter.exit()) {
-    camera.read(img, timestamp);
+    profile_log.next_frame();
+    tools::ProfileScope loop_scope(profile_log, "loop.total");
+
+    {
+      tools::ProfileScope scope(profile_log, "camera.read");
+      camera.read(img, timestamp);
+    }
+
     if (img.empty()) {
       cv::Mat placeholder(720, 1280, CV_8UC3, cv::Scalar(0, 0, 0));
       tools::draw_text(placeholder, "SP Vision: no camera frame", {30, 60}, {0, 0, 255}, 1.0, 2);
-      ros2.publish_raw_image(placeholder);
-      ros2.publish_autoaim_image(placeholder);
+      {
+        tools::ProfileScope scope(profile_log, "ros2.publish_raw_image");
+        ros2.publish_raw_image(placeholder);
+      }
+      {
+        tools::ProfileScope scope(profile_log, "ros2.publish_autoaim_image");
+        ros2.publish_autoaim_image(placeholder);
+      }
       continue;
     }
 
-    ros2.publish_raw_image(img);
+    {
+      tools::ProfileScope scope(profile_log, "ros2.publish_raw_image");
+      ros2.publish_raw_image(img);
+    }
 
     Eigen::Quaterniond q = Eigen::Quaterniond::Identity();
     if (cboard) {
+      tools::ProfileScope scope(profile_log, "cboard.imu_at");
       q = cboard->imu_at(timestamp - 1ms);
     } else {
+      tools::ProfileScope scope(profile_log, "ros2.subscribe_imu");
       q = ros2.subscribe_imu();
     }
     // recorder.record(img, q, timestamp);
 
     /// 自瞄核心逻辑
-    solver.set_R_gimbal2world(q);
+    {
+      tools::ProfileScope scope(profile_log, "solver.set_R_gimbal2world");
+      solver.set_R_gimbal2world(q);
+    }
 
-    Eigen::Vector3d gimbal_pos = tools::eulers(solver.R_gimbal2world(), 2, 1, 0);
+    Eigen::Vector3d gimbal_pos;
+    {
+      tools::ProfileScope scope(profile_log, "tools.eulers");
+      gimbal_pos = tools::eulers(solver.R_gimbal2world(), 2, 1, 0);
+    }
 
-    auto armors = yolo.detect(img);
-    decider.set_self_color(ros2.subscribe_self_color());
+    std::list<auto_aim::Armor> armors;
+    {
+      tools::ProfileScope scope(profile_log, "detector.yolo.detect");
+      armors = yolo.detect(img);
+    }
+    {
+      tools::ProfileScope scope(profile_log, "ros2.subscribe_self_color");
+      decider.set_self_color(ros2.subscribe_self_color());
+    }
 
-    decider.get_invincible_armor(ros2.subscribe_enemy_status());
+    {
+      tools::ProfileScope scope(profile_log, "ros2.subscribe_enemy_status");
+      decider.get_invincible_armor(ros2.subscribe_enemy_status());
+    }
 
-    decider.armor_filter(armors);
+    {
+      tools::ProfileScope scope(profile_log, "decider.armor_filter");
+      decider.armor_filter(armors);
+    }
     // decider.get_auto_aim_target(armors, ros2.subscribe_autoaim_target());
-    decider.set_priority(armors);
+    {
+      tools::ProfileScope scope(profile_log, "decider.set_priority");
+      decider.set_priority(armors);
+    }
 
-    auto targets = tracker.track(armors, timestamp);
+    std::list<auto_aim::Target> targets;
+    {
+      tools::ProfileScope scope(profile_log, "tracker.track");
+      targets = tracker.track(armors, timestamp);
+    }
 
     io::Command command{false, false, 0, 0};
 
     /// 全向感知逻辑
     if (tracker.state() == "lost") {
       if (use_usb_cameras && usbcam1 && usbcam2) {
-        command = decider.decide(
-          yolo, gimbal_pos, *usbcam1, *usbcam2, back_camera ? *back_camera : camera,
-          use_back_camera);
+        tools::ProfileScope scope(profile_log, "decider.decide.multi_camera");
+        command =
+          decider.decide(yolo, gimbal_pos, *usbcam1, *usbcam2, back_camera ? *back_camera : camera,
+            use_back_camera);
       } else {
+        tools::ProfileScope scope(profile_log, "decider.decide.single_camera");
         command =
           decider.decide(yolo, gimbal_pos, back_camera ? *back_camera : camera, use_back_camera);
       }
     } else
-      command = aimer.aim(
-        targets, timestamp, cboard ? cboard->bullet_speed : 0.0,
-        cboard ? cboard->shoot_mode : io::ShootMode::left_shoot);
+      {
+        tools::ProfileScope scope(profile_log, "aimer.aim");
+        command = aimer.aim(
+          targets, timestamp, cboard ? cboard->bullet_speed : 0.0,
+          cboard ? cboard->shoot_mode : io::ShootMode::left_shoot);
+      }
 
     /// 发射逻辑
-    command.shoot = shooter.shoot(command, aimer, targets, gimbal_pos);
+    {
+      tools::ProfileScope scope(profile_log, "shooter.shoot");
+      command.shoot = shooter.shoot(command, aimer, targets, gimbal_pos);
+    }
 
     if (cboard) {
+      tools::ProfileScope scope(profile_log, "cboard.send");
       cboard->send(command);
     }
-    ros2.publish_autoaim_command(command);
+    {
+      tools::ProfileScope scope(profile_log, "ros2.publish_autoaim_command");
+      ros2.publish_autoaim_command(command);
+    }
 
     auto search_color = decider.current_search_color_text();
     auto self_color = decider.current_self_color_text();
@@ -262,16 +332,33 @@ int main(int argc, char * argv[])
       }
     }
 
-    cv::Mat autoaim_img = img.clone();
-    draw_autoaim_overlay(
-      autoaim_img, armors, command, tracker.state(), search_color, self_color, publish_fps,
-      aim_point_px, final_x);
-    ros2.publish_autoaim_image(autoaim_img);
+    cv::Mat autoaim_img;
+    {
+      tools::ProfileScope scope(profile_log, "image.clone");
+      autoaim_img = img.clone();
+    }
+    {
+      tools::ProfileScope scope(profile_log, "draw_autoaim_overlay");
+      draw_autoaim_overlay(
+        autoaim_img, armors, command, tracker.state(), search_color, self_color, publish_fps,
+        aim_point_px, final_x);
+    }
+    {
+      tools::ProfileScope scope(profile_log, "ros2.publish_autoaim_image");
+      ros2.publish_autoaim_image(autoaim_img);
+    }
 
     /// ROS2通信
-    Eigen::Vector4d target_info = decider.get_target_info(armors, targets);
+    Eigen::Vector4d target_info;
+    {
+      tools::ProfileScope scope(profile_log, "decider.get_target_info");
+      target_info = decider.get_target_info(armors, targets);
+    }
 
-    ros2.publish(target_info);
+    {
+      tools::ProfileScope scope(profile_log, "ros2.publish.target_info");
+      ros2.publish(target_info);
+    }
   }
   return 0;
 }
