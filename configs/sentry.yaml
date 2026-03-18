@@ -33,7 +33,7 @@ autoaim_decide_mode: 1
 #####-----日志/Profiler/ros2图像节点参数-----#####
 profile_log_enabled: true
 profile_log_flush_every: 100 # 每x帧刷新一次日志
-profile_log_stdout_enabled: true
+profile_log_stdout_enabled: false
 profile_log_file_enabled: false
 profile_log_ros2_topic_enabled: true
 

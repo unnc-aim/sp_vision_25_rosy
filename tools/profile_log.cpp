@@ -24,7 +24,9 @@ ProfileLog::ProfileLog(
   flush_every_(flush_every),
   pending_lines_(0),
   ros2_topic_publisher_(std::move(ros2_topic_publisher)),
-  frame_started_(false)
+  frame_started_(false),
+  last_frame_time_(std::chrono::steady_clock::now()),
+  last_frame_elapsed_ms_(0.0)
 {
   if (!enabled_) return;
 
@@ -76,11 +78,19 @@ void ProfileLog::next_frame()
   if (!enabled_) return;
   std::lock_guard<std::mutex> lk(mtx_);
 
+  const auto now = std::chrono::steady_clock::now();
   if (frame_started_) {
+    last_frame_elapsed_ms_ =
+      static_cast<double>(
+        std::chrono::duration_cast<std::chrono::microseconds>(now - last_frame_time_).count()) /
+      1000.0;
     finalize_current_frame();
     flush_if_needed();
+  } else {
+    last_frame_elapsed_ms_ = 0.0;
   }
 
+  last_frame_time_ = now;
   ++frame_id_;
   frame_started_ = true;
   current_frame_records_.clear();
@@ -140,8 +150,7 @@ void ProfileLog::finalize_current_frame()
 
   double total_ms = 0.0;
   bool has_loop_total = false;
-  std::string modules_json = "{\n";
-  bool first_module = true;
+  std::string modules_text;
 
   for (std::size_t i = 0; i < current_frame_records_.size(); ++i) {
     const auto & record = current_frame_records_[i];
@@ -159,7 +168,7 @@ void ProfileLog::finalize_current_frame()
     }
   }
 
-  const double fps = total_ms > 0.0 ? 1000.0 / total_ms : 0.0;
+  const double fps = last_frame_elapsed_ms_ > 0.0 ? 1000.0 / last_frame_elapsed_ms_ : 0.0;
 
   for (const auto & record : current_frame_records_) {
     const auto & module = record.first;
@@ -169,25 +178,19 @@ void ProfileLog::finalize_current_frame()
       continue;
     }
 
-    if (!first_module) {
-      modules_json += ",\n";
-    }
-    modules_json += fmt::format("    \"{}\": {:.3f}", module, cost_ms);
-    first_module = false;
+    modules_text += fmt::format("\t{}: {:.3f}ms\n", module, cost_ms);
   }
-  modules_json += "\n  }";
 
   const auto now = std::chrono::system_clock::now();
   const auto packed_line = fmt::format(
-    "{{\n"
-    "  \"time\": \"{:%H:%M:%S}\",\n"
-    "  \"frame\": {},\n"
-    "  \"fps\": {:.2f},\n"
-    "  \"total_ms\": {:.3f},\n"
-    "  \"module_count\": {},\n"
-    "  \"modules\": {}\n"
-    "}}",
-    now, frame_id_, fps, total_ms, current_frame_records_.size(), modules_json);
+    "time: {:%H:%M:%S}\n"
+    "frame: {}\n"
+    "fps: {:.2f}\n"
+    "total_ms: {:.3f}\n"
+    "module_count: {}\n"
+    "modules:\n"
+    "{}",
+    now, frame_id_, fps, total_ms, current_frame_records_.size(), modules_text);
 
   pending_frame_lines_.push_back(packed_line);
   pending_lines_ = pending_frame_lines_.size();

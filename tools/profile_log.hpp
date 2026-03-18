@@ -48,6 +48,8 @@ private:
   std::mutex mtx_;
   std::function<void(const std::string &)> ros2_topic_publisher_;
   bool frame_started_;
+  std::chrono::steady_clock::time_point last_frame_time_;
+  double last_frame_elapsed_ms_;
   std::vector<std::pair<std::string, double>> current_frame_records_;
   std::vector<std::string> pending_frame_lines_;
 
