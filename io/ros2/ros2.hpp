@@ -1,8 +1,8 @@
 #ifndef IO__ROS2_HPP
 #define IO__ROS2_HPP
 
-#include <opencv2/core/mat.hpp>
 #include <Eigen/Geometry>
+#include <opencv2/core/mat.hpp>
 
 #include "io/command.hpp"
 #include "publish2nav.hpp"
@@ -24,6 +24,8 @@ public:
   void publish_raw_image(const cv::Mat & image);
 
   void publish_autoaim_image(const cv::Mat & image);
+
+  void publish_profile_log(const std::string & line);
 
   std::vector<int8_t> subscribe_enemy_status();
 

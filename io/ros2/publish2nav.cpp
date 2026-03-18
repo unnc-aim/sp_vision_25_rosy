@@ -20,6 +20,8 @@ Publish2Nav::Publish2Nav() : Node("auto_aim_target_pos_publisher")
     this->create_publisher<sensor_msgs::msg::Image>("/sp_vision/image_raw", 10);
   autoaim_image_publisher_ =
     this->create_publisher<sensor_msgs::msg::Image>("/sp_vision/image_autoaim", 10);
+  profile_log_publisher_ =
+    this->create_publisher<std_msgs::msg::String>("/sp_vision/profile_log", 100);
 
   RCLCPP_INFO(this->get_logger(), "auto_aim_target_pos_publisher node initialized.");
 }
@@ -69,6 +71,13 @@ void Publish2Nav::send_autoaim_image(const cv::Mat & image)
 {
   if (image.empty()) return;
   autoaim_image_publisher_->publish(cv_to_image_msg(image, "sp_vision_autoaim", this->now()));
+}
+
+void Publish2Nav::send_profile_log(const std::string & line)
+{
+  std_msgs::msg::String msg;
+  msg.data = line;
+  profile_log_publisher_->publish(msg);
 }
 
 Publish2Nav::~Publish2Nav()

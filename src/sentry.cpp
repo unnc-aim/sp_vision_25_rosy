@@ -142,6 +142,21 @@ int main(int argc, char * argv[])
     profile_log_flush_every = yaml["profile_log_flush_every"].as<std::size_t>();
   }
 
+  bool profile_log_stdout_enabled = false;
+  if (yaml["profile_log_stdout_enabled"]) {
+    profile_log_stdout_enabled = yaml["profile_log_stdout_enabled"].as<bool>();
+  }
+
+  bool profile_log_file_enabled = true;
+  if (yaml["profile_log_file_enabled"]) {
+    profile_log_file_enabled = yaml["profile_log_file_enabled"].as<bool>();
+  }
+
+  bool profile_log_ros2_topic_enabled = false;
+  if (yaml["profile_log_ros2_topic_enabled"]) {
+    profile_log_ros2_topic_enabled = yaml["profile_log_ros2_topic_enabled"].as<bool>();
+  }
+
   auto config_dir = std::filesystem::path(config_path).parent_path();
   auto back_camera_config = (config_dir / "camera.yaml").string();
 
@@ -177,7 +192,14 @@ int main(int argc, char * argv[])
   auto_aim::Aimer aimer(config_path);
   auto_aim::Shooter shooter(config_path);
 
-  tools::ProfileLog profile_log("sentry_profile", profile_log_flush_every, profile_log_enabled);
+  tools::ProfileLogOutputConfig profile_log_output_config;
+  profile_log_output_config.stdout_enabled = profile_log_stdout_enabled;
+  profile_log_output_config.file_enabled = profile_log_file_enabled;
+  profile_log_output_config.ros2_topic_enabled = profile_log_ros2_topic_enabled;
+
+  tools::ProfileLog profile_log(
+    "sentry_profile", profile_log_flush_every, profile_log_enabled, profile_log_output_config,
+    [&ros2](const std::string & line) { ros2.publish_profile_log(line); });
 
   omniperception::Decider decider(config_path);
 

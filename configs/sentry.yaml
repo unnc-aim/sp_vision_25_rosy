@@ -32,19 +32,25 @@ autoaim_decide_mode: 1
 
 #####-----日志/Profiler/ros2图像节点参数-----#####
 profile_log_enabled: true
-profile_log_flush_every: 200 # 每10帧刷新一次日志
-enable_ros2_image_publish: true # false 时不发布 /sp_vision/image_raw 与 /sp_vision/image_autoaim
+profile_log_flush_every: 100 # 每x帧刷新一次日志
+profile_log_stdout_enabled: true
+profile_log_file_enabled: false
+profile_log_ros2_topic_enabled: true
 
-#####-----神经网络参数-----#####
+enable_ros2_image_publish: false # false 时不发布 /sp_vision/image_raw 与 /sp_vision/image_autoaim
+
+#####-----神经网络/预测参数-----#####
+use_traditional: true
+min_confidence: 0.8
+use_kalman: false
+
+#####-----yolo参数-----#####
 yolo_name: yolov5
+device: GPU
 classify_model: assets/tiny_resnet.onnx
 yolo11_model_path: assets/yolo11.xml
 yolov8_model_path: assets/yolov8.xml
 yolov5_model_path: assets/yolov5.xml
-device: GPU
-min_confidence: 0.8
-use_traditional: true
-use_kalman: false
 
 #####-----ROI-----#####
 roi: 
@@ -74,7 +80,7 @@ camera_name: "hikrobot"
 rotate_180_deg: true
 exposure_ms: 8
 gain: 16
-serial_number: "DA8184833" # 2026.3.17 当前靶车上的
+serial_number: "DA8184833" # 2026.3.17 当前调试车上的
 # serial_number: "DA7447428"
 vid_pid: "2bdf:0001"
 

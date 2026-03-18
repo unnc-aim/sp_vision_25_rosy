@@ -35,6 +35,8 @@ public:
 
   void send_autoaim_image(const cv::Mat & image);
 
+  void send_profile_log(const std::string & line);
+
 private:
   sensor_msgs::msg::Image cv_to_image_msg(
     const cv::Mat & image, const std::string & frame_id, const rclcpp::Time & stamp) const;
@@ -44,6 +46,7 @@ private:
   rclcpp::Publisher<sp_msgs::msg::AutoAimCommandMsg>::SharedPtr autoaim_command_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr raw_image_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr autoaim_image_publisher_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr profile_log_publisher_;
 };
 
 }  // namespace io

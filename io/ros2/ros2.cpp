@@ -32,6 +32,8 @@ void ROS2::publish_raw_image(const cv::Mat & image) { publish2nav_->send_raw_ima
 
 void ROS2::publish_autoaim_image(const cv::Mat & image) { publish2nav_->send_autoaim_image(image); }
 
+void ROS2::publish_profile_log(const std::string & line) { publish2nav_->send_profile_log(line); }
+
 std::vector<int8_t> ROS2::subscribe_enemy_status()
 {
   return subscribe2nav_->subscribe_enemy_status();
