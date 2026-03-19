@@ -28,18 +28,9 @@ public:
     io::USBCamera & usbcam2, io::Camera & back_cammera, bool use_back_camera = true);
 
   io::Command decide(
-    auto_aim::Detector & detector, const Eigen::Vector3d & gimbal_pos, io::USBCamera & usbcam1,
-    io::USBCamera & usbcam2, io::Camera & back_cammera, bool use_back_camera = true);
-
-  io::Command decide(
     auto_aim::YOLO & yolo, const Eigen::Vector3d & gimbal_pos, io::Camera & back_cammera,
     bool use_back_camera = true);
 
-  io::Command decide(
-    auto_aim::Detector & detector, const Eigen::Vector3d & gimbal_pos, io::Camera & back_cammera,
-    bool use_back_camera = true);
-
-  io::Command decide(const std::vector<DetectionResult> & detection_queue);
 
   Eigen::Vector2d delta_angle(
     const std::list<auto_aim::Armor> & armors, const std::string & camera);
