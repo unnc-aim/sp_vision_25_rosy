@@ -138,7 +138,7 @@ io::Command Decider::decide(
 
     return io::Command{
       true, false, tools::limit_rad(gimbal_pos[0] + delta_angle[0] / 57.3),
-      tools::limit_rad(delta_angle[1] / 57.3)};
+      tools::limit_rad(gimbal_pos[1] + delta_angle[1] / 57.3)};
   }
 
   count_ = (count_ + 1) % 3;
@@ -184,7 +184,7 @@ io::Command Decider::decide(
 
     return io::Command{
       true, false, tools::limit_rad(gimbal_pos[0] + delta_angle[0] / 57.3),
-      tools::limit_rad(delta_angle[1] / 57.3)};
+      tools::limit_rad(gimbal_pos[1] + delta_angle[1] / 57.3)};
   }
 
   count_ = (count_ + 1) % 3;
@@ -210,7 +210,7 @@ io::Command Decider::decide(
 
     return io::Command{
       true, false, tools::limit_rad(gimbal_pos[0] + delta_angle[0] / 57.3),
-      tools::limit_rad(delta_angle[1] / 57.3)};
+      tools::limit_rad(gimbal_pos[1] + delta_angle[1] / 57.3)};
   }
 
   return io::Command{false, false, 0, 0};
@@ -235,7 +235,7 @@ io::Command Decider::decide(
 
     return io::Command{
       true, false, tools::limit_rad(gimbal_pos[0] + delta_angle[0] / 57.3),
-      tools::limit_rad(delta_angle[1] / 57.3)};
+      tools::limit_rad(gimbal_pos[1] + delta_angle[1] / 57.3)};
   }
 
   return io::Command{false, false, 0, 0};
