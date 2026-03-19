@@ -16,10 +16,13 @@ Publish2Nav::Publish2Nav() : Node("auto_aim_target_pos_publisher")
   publisher_ = this->create_publisher<std_msgs::msg::String>("auto_aim_target_pos", 10);
   autoaim_command_publisher_ =
     this->create_publisher<sp_msgs::msg::AutoAimCommandMsg>("/sp_vision/autoaim_command", 10);
+  // [IMAGE QOS] 显式使用 RELIABLE QoS 以兼容 RQT 图像显示
+  rclcpp::QoS image_qos(10);
+  image_qos.reliable();
   raw_image_publisher_ =
-    this->create_publisher<sensor_msgs::msg::Image>("/sp_vision/image_raw", 10);
+    this->create_publisher<sensor_msgs::msg::Image>("/sp_vision/image_raw", image_qos);
   autoaim_image_publisher_ =
-    this->create_publisher<sensor_msgs::msg::Image>("/sp_vision/image_autoaim", 10);
+    this->create_publisher<sensor_msgs::msg::Image>("/sp_vision/image_autoaim", image_qos);
   profile_log_publisher_ =
     this->create_publisher<std_msgs::msg::String>("/sp_vision/profile_log", 100);
 

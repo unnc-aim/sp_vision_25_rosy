@@ -37,12 +37,12 @@ profile_log_stdout_enabled: false
 profile_log_file_enabled: false
 profile_log_ros2_topic_enabled: true
 
-enable_ros2_image_publish: false # false 时不发布 /sp_vision/image_raw 与 /sp_vision/image_autoaim
+enable_ros2_image_publish: true # false 时不发布 /sp_vision/image_raw 与 /sp_vision/image_autoaim
 
 #####-----神经网络/预测参数-----#####
 use_traditional: true
 min_confidence: 0.8
-use_kalman: false
+use_kalman: true
 
 #####-----yolo参数-----#####
 yolo_name: yolov5
@@ -78,7 +78,7 @@ usb_gain: 10 #0-96
 use_back_camera: false
 camera_name: "hikrobot"
 rotate_180_deg: true
-exposure_ms: 8
+exposure_ms: 3
 gain: 16
 serial_number: "DA8184833" # 2026.3.17 当前调试车上的
 # serial_number: "DA7447428"

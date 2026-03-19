@@ -27,9 +27,11 @@ Subscribe2Nav::Subscribe2Nav()
     "/referee/self_color", 10,
     std::bind(&Subscribe2Nav::self_color_callback, this, std::placeholders::_1));
 
-  // Subscribe to IMU data from EtherCAT controller
+  // Subscribe to IMU data from EtherCAT controller (BEST_EFFORT to match publisher QoS)
+  rclcpp::QoS imu_qos(1);
+  imu_qos.best_effort();
   imu_subscription_ = this->create_subscription<sensor_msgs::msg::Imu>(
-    "/ecat/sn4587585/app2/read", 10,
+    "/ecat/sn4587585/app2/read", imu_qos,
     std::bind(&Subscribe2Nav::imu_callback, this, std::placeholders::_1));
 
   RCLCPP_INFO(this->get_logger(), "nav_subscriber node initialized with IMU subscription.");

@@ -210,6 +210,7 @@ int main(int argc, char * argv[])
   int fps_window_frames = 0;
   double publish_fps = 0.0;
   io::Command last_command;
+  int autoaim_log_counter = 0;  // <<<< AUTOAIM DEBUG LOG COUNTER >>>>
 
   while (!exiter.exit()) {
     profile_log.next_frame();
@@ -250,6 +251,17 @@ int main(int argc, char * argv[])
       q = ros2.subscribe_imu();
     }
     // recorder.record(img, q, timestamp);
+
+    // >>>>>>>>>>>> AUTOAIM DEBUG: IMU quaternion <<<<<<<<<<<<
+    static int imu_log_counter = 0;
+    if (++imu_log_counter >= 200) {  // ~1Hz at ~200fps
+      imu_log_counter = 0;
+      auto q_norm = q.norm();
+      tools::logger()->info(
+        "[AUTOAIM-IMU] q=({:.4f},{:.4f},{:.4f},{:.4f}) norm={:.4f}",
+        q.w(), q.x(), q.y(), q.z(), q_norm);
+    }
+    // <<<<<<<<<<<<< AUTOAIM DEBUG END >>>>>>>>>>>>>>>>>>>>>>>>
 
     /// 自瞄核心逻辑
     {
@@ -320,6 +332,24 @@ int main(int argc, char * argv[])
       tools::ProfileScope scope(profile_log, "shooter.shoot");
       command.shoot = shooter.shoot(command, aimer, targets, gimbal_pos);
     }
+
+    // >>>>>>>>>>>> AUTOAIM DEBUG: command output <<<<<<<<<<<<
+    if (command.control) {
+      autoaim_log_counter++;
+      if (autoaim_log_counter >= 20) {  // ~10Hz at ~200fps
+        autoaim_log_counter = 0;
+        auto aim_xyz = aimer.debug_aim_point.xyza.head(3);
+        tools::logger()->info(
+          "[AUTOAIM-CMD] yaw={:.4f} pitch={:.4f} shoot={} | "
+          "aim_xyz=({:.3f},{:.3f},{:.3f}) | tracker={} | armors={}",
+          command.yaw, command.pitch, command.shoot,
+          aim_xyz.x(), aim_xyz.y(), aim_xyz.z(),
+          tracker.state(), armors.size());
+      }
+    } else {
+      autoaim_log_counter = 0;
+    }
+    // <<<<<<<<<<<<< AUTOAIM DEBUG END >>>>>>>>>>>>>>>>>>>>>>>>
 
     if (cboard) {
       tools::ProfileScope scope(profile_log, "cboard.send");
