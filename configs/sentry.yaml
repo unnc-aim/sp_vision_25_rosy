@@ -119,6 +119,8 @@ right_yaw_offset: -0.6
 decision_speed: 10 # rad/s
 high_speed_delay_time: 0.026 # s
 low_speed_delay_time: 0.010 # s
+pitch_guard_max_error_deg: 2.0
+pitch_cmd_max_step_deg: 0.5
 
 #####-----shooter参数-----#####
 first_tolerance: 5 # 近距离射击容差，degree

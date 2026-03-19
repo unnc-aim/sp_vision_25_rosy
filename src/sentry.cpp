@@ -3,6 +3,7 @@
 
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <filesystem>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -203,6 +204,36 @@ int main(int argc, char * argv[])
 
   omniperception::Decider decider(config_path);
 
+  // Pitch 命令保护参数：抑制目标角突跳导致的异常状态。
+  bool pitch_guard_enabled = true;
+  if (yaml["pitch_guard_enabled"]) {
+    pitch_guard_enabled = yaml["pitch_guard_enabled"].as<bool>();
+  }
+  double pitch_guard_max_error_deg = 8.0;
+  if (yaml["pitch_guard_max_error_deg"]) {
+    pitch_guard_max_error_deg = yaml["pitch_guard_max_error_deg"].as<double>();
+  }
+  double pitch_cmd_max_step_deg = 1.5;
+  if (yaml["pitch_cmd_max_step_deg"]) {
+    pitch_cmd_max_step_deg = yaml["pitch_cmd_max_step_deg"].as<double>();
+  }
+  double pitch_cmd_min_deg = -25.0;
+  if (yaml["pitch_cmd_min_deg"]) {
+    pitch_cmd_min_deg = yaml["pitch_cmd_min_deg"].as<double>();
+  }
+  double pitch_cmd_max_deg = 40.0;
+  if (yaml["pitch_cmd_max_deg"]) {
+    pitch_cmd_max_deg = yaml["pitch_cmd_max_deg"].as<double>();
+  }
+
+  const double pitch_guard_max_error_rad = pitch_guard_max_error_deg / 57.3;
+  const double pitch_cmd_max_step_rad = std::max(0.0, pitch_cmd_max_step_deg / 57.3);
+  const double pitch_cmd_min_rad = pitch_cmd_min_deg / 57.3;
+  const double pitch_cmd_max_rad = pitch_cmd_max_deg / 57.3;
+  bool last_pitch_cmd_valid = false;
+  double last_pitch_cmd = 0.0;
+  int pitch_guard_log_counter = 0;
+
   cv::Mat img;
 
   std::chrono::steady_clock::time_point timestamp;
@@ -258,8 +289,8 @@ int main(int argc, char * argv[])
       imu_log_counter = 0;
       auto q_norm = q.norm();
       tools::logger()->info(
-        "[AUTOAIM-IMU] q=({:.4f},{:.4f},{:.4f},{:.4f}) norm={:.4f}",
-        q.w(), q.x(), q.y(), q.z(), q_norm);
+        "[AUTOAIM-IMU] q=({:.4f},{:.4f},{:.4f},{:.4f}) norm={:.4f}", q.w(), q.x(), q.y(), q.z(),
+        q_norm);
     }
     // <<<<<<<<<<<<< AUTOAIM DEBUG END >>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -327,6 +358,36 @@ int main(int argc, char * argv[])
         cboard ? cboard->shoot_mode : io::ShootMode::left_shoot);
     }
 
+    // Pitch 命令保护：先做角差限幅，再做单帧限速，最后做绝对俯仰限位。
+    if (pitch_guard_enabled && command.control) {
+      double pitch_err = command.pitch - gimbal_pos[1];
+      if (std::fabs(pitch_err) > pitch_guard_max_error_rad) {
+        command.pitch =
+          gimbal_pos[1] + (pitch_err > 0 ? pitch_guard_max_error_rad : -pitch_guard_max_error_rad);
+        pitch_guard_log_counter++;
+        if (pitch_guard_log_counter >= 20) {
+          pitch_guard_log_counter = 0;
+          tools::logger()->warn(
+            "[PITCH-GUARD] large error clipped: err={:.2f}deg limit={:.2f}deg tracker={}",
+            pitch_err * 57.3, pitch_guard_max_error_deg, tracker.state());
+        }
+      }
+
+      if (!last_pitch_cmd_valid) {
+        last_pitch_cmd = command.pitch;
+        last_pitch_cmd_valid = true;
+      } else {
+        double step = command.pitch - last_pitch_cmd;
+        if (std::fabs(step) > pitch_cmd_max_step_rad) {
+          command.pitch =
+            last_pitch_cmd + (step > 0 ? pitch_cmd_max_step_rad : -pitch_cmd_max_step_rad);
+        }
+      }
+
+      command.pitch = tools::limit_min_max(command.pitch, pitch_cmd_min_rad, pitch_cmd_max_rad);
+      last_pitch_cmd = command.pitch;
+    }
+
     /// 发射逻辑
     {
       tools::ProfileScope scope(profile_log, "shooter.shoot");
@@ -342,8 +403,7 @@ int main(int argc, char * argv[])
         tools::logger()->info(
           "[AUTOAIM-CMD] yaw={:.4f} pitch={:.4f} shoot={} | "
           "aim_xyz=({:.3f},{:.3f},{:.3f}) | tracker={} | armors={}",
-          command.yaw, command.pitch, command.shoot,
-          aim_xyz.x(), aim_xyz.y(), aim_xyz.z(),
+          command.yaw, command.pitch, command.shoot, aim_xyz.x(), aim_xyz.y(), aim_xyz.z(),
           tracker.state(), armors.size());
       }
     } else {
