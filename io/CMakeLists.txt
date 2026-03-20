@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 find_package(yaml-cpp REQUIRED)
+find_package(fastcdr REQUIRED)
 
 add_subdirectory(serial)
 

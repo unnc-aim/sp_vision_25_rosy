@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.16.3)
 
 project(sp_vision)
+list(INSERT CMAKE_PREFIX_PATH 0 "/opt/ros/humble")
+# 强制使用 ROS2 的 fastcdr
+set(fastcdr_DIR "/opt/ros/humble/lib/cmake/fastcdr/" CACHE PATH "fastcdr cmake path")
 
 include(GNUInstallDirs)
 
@@ -16,6 +19,7 @@ find_package(yaml-cpp REQUIRED)
 find_package(nlohmann_json REQUIRED)
 set(OpenVINO_DIR "/opt/intel/openvino_2024.6.0/runtime/cmake/")
 find_package(OpenVINO REQUIRED)
+find_package(fastcdr REQUIRED)
 
 include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${OpenCV_INCLUDE_DIRS})
@@ -43,7 +47,7 @@ add_subdirectory(tasks/omniperception)
 
 # camera test
 add_executable(camera_test tests/camera_test.cpp)
-target_link_libraries(camera_test ${OpenCV_LIBS} fmt::fmt tools io)
+target_link_libraries(camera_test ${OpenCV_LIBS} fmt::fmt yaml-cpp io tools)
 
 # 检查 ROS 环境
 find_package(ament_cmake QUIET)
@@ -55,7 +59,7 @@ find_package(sp_msgs QUIET)
 # 只有在找到 ROS 环境时才会添加 sentry 和 publish_test
 if(ament_cmake_FOUND AND rclcpp_FOUND AND std_msgs_FOUND AND sensor_msgs_FOUND AND rosidl_typesupport_cpp_FOUND AND sp_msgs_FOUND)
     add_executable(sentry src/sentry.cpp)
-    target_link_libraries(sentry ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim omniperception tools io)
+    target_link_libraries(sentry ${OpenCV_LIBS} fmt::fmt yaml-cpp auto_aim omniperception tools io rclcpp::rclcpp)
 else()
     message(STATUS "ROS2 environment not found, skipping ROS2-related code.")
 endif()

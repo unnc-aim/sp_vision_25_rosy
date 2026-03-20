@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 
-add_library(tools OBJECT 
+find_package(OpenCV REQUIRED)
+find_package(fmt REQUIRED)
+
+add_library(tools STATIC 
     exiter.cpp
     extended_kalman_filter.cpp
     ransac_sine_fitter.cpp
@@ -14,3 +17,5 @@ add_library(tools OBJECT
     pid.cpp
     crc.cpp
 )
+
+target_link_libraries(tools ${OpenCV_LIBS} fmt::fmt)
