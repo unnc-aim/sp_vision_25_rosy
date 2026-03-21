@@ -2,7 +2,7 @@
 auto_aim_ally: false
 auto_aim_enemy: true
 auto_aim_red: false
-auto_aim_blue: false
+auto_aim_blue: true
 
 autoaim_decide_mode: 1
 
@@ -34,10 +34,10 @@ autoaim_decide_mode: 1
 use_back_camera: false
 camera_name: "hikrobot"
 rotate_180_deg: true
-exposure_ms: 8
+exposure_ms: 6
 gain: 16
-serial_number: "DA8184833" # 2026.3.17 当前调试车上的
-# serial_number: "DA7447428"
+# serial_number: "DA8184833" # 2026.3.17 当前调试车上的
+serial_number: "DA7447428" # 2026.3.21 sentry
 vid_pid: "2bdf:0001"
 
 #####-----日志/Profiler/ros2图像节点参数-----#####
