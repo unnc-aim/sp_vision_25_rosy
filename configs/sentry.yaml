@@ -34,7 +34,7 @@ autoaim_decide_mode: 1
 use_back_camera: false
 camera_name: "hikrobot"
 rotate_180_deg: true
-exposure_ms: 8
+exposure_ms: 4
 gain: 16
 serial_number: "DA8184833" # 2026.3.17 当前调试车上的
 # serial_number: "DA7447428"
@@ -114,7 +114,7 @@ yaw_offset: -0.8 # degree -2.5
 pitch_offset: -1  # degree 2
 comming_angle: 60 # degree
 leaving_angle: 20 # degree
-left_yaw_offset: -1
+left_yaw_offset: 0
 right_yaw_offset: -0.6
 decision_speed: 10 # rad/s
 high_speed_delay_time: 0.026 # s
