@@ -31,7 +31,7 @@ Subscribe2Nav::Subscribe2Nav()
   rclcpp::QoS imu_qos(1);
   imu_qos.best_effort();
   imu_subscription_ = this->create_subscription<sensor_msgs::msg::Imu>(
-    "/ecat/sn4587585/app2/read", imu_qos,
+    "/ecat/sn4653115/app2/read", imu_qos, /* originally sn4587585, but this ec is not present anymore */
     std::bind(&Subscribe2Nav::imu_callback, this, std::placeholders::_1));
 
   RCLCPP_INFO(this->get_logger(), "nav_subscriber node initialized with IMU subscription.");
