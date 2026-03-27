@@ -11,7 +11,7 @@ Subscribe2Nav::Subscribe2Nav()
   enemy_statue_queue_(1),
   autoaim_target_queue_(1),
   imu_queue_(1),
-  self_color_("unknown"),
+  self_color_(dji_referee_protocol::msg::Constants::COLOR_UNKNOWN),
   enemy_status_counter_(0),
   autoaim_target_counter_(0)
 {
@@ -23,8 +23,8 @@ Subscribe2Nav::Subscribe2Nav()
     "autoaim_target", 10,
     std::bind(&Subscribe2Nav::autoaim_target_callback, this, std::placeholders::_1));
 
-  self_color_subscription_ = this->create_subscription<std_msgs::msg::String>(
-    "/referee/self_color", 10,
+  self_color_subscription_ = this->create_subscription<dji_referee_protocol::msg::SelfColor>(
+    "/referee/parsed/common/self_color", 10,
     std::bind(&Subscribe2Nav::self_color_callback, this, std::placeholders::_1));
 
   // Subscribe to IMU data from EtherCAT controller (BEST_EFFORT to match publisher QoS)
@@ -37,9 +37,9 @@ Subscribe2Nav::Subscribe2Nav()
   RCLCPP_INFO(this->get_logger(), "nav_subscriber node initialized with IMU subscription.");
 }
 
-void Subscribe2Nav::self_color_callback(const std_msgs::msg::String::SharedPtr msg)
+void Subscribe2Nav::self_color_callback(const dji_referee_protocol::msg::SelfColor::SharedPtr msg)
 {
-  self_color_ = msg->data;
+  self_color_ = msg->color;
 }
 
 Subscribe2Nav::~Subscribe2Nav()
@@ -129,7 +129,7 @@ std::vector<int8_t> Subscribe2Nav::subscribe_autoaim_target()
   return msg.target_ids;
 }
 
-std::string Subscribe2Nav::subscribe_self_color() { return self_color_; }
+uint8_t Subscribe2Nav::subscribe_self_color() { return self_color_; }
 
 Eigen::Quaterniond Subscribe2Nav::subscribe_imu()
 {
@@ -138,13 +138,13 @@ Eigen::Quaterniond Subscribe2Nav::subscribe_imu()
   }
   sensor_msgs::msg::Imu msg;
   imu_queue_.back(msg);
-  
+
   Eigen::Quaterniond q;
   q.w() = msg.orientation.w;
   q.x() = msg.orientation.x;
   q.y() = msg.orientation.y;
   q.z() = msg.orientation.z;
-  
+
   return q;
 }
 

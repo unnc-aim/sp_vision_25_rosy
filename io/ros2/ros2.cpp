@@ -44,7 +44,7 @@ std::vector<int8_t> ROS2::subscribe_autoaim_target()
   return subscribe2nav_->subscribe_autoaim_target();
 }
 
-std::string ROS2::subscribe_self_color() { return subscribe2nav_->subscribe_self_color(); }
+uint8_t ROS2::subscribe_self_color() { return subscribe2nav_->subscribe_self_color(); }
 
 Eigen::Quaterniond ROS2::subscribe_imu() { return subscribe2nav_->subscribe_imu(); }
 

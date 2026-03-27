@@ -9,6 +9,7 @@
 
   <buildtool_depend>cmake</buildtool_depend>
   <depend>sp_msgs</depend>
+  <depend>dji_referee_protocol</depend>
 
   <export>
     <build_type>cmake</build_type>

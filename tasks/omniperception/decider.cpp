@@ -35,11 +35,15 @@ Decider::Decider(const std::string & config_path)
   mode_ = yaml["autoaim_decide_mode"].as<double>();
 }
 
-void Decider::set_self_color(const std::string & self_color)
+void Decider::set_self_color(uint8_t self_color)
 {
-  if (self_color == "red") {
+  // 使用DJ裁判系统颜色常量
+  const uint8_t COLOR_RED = 1;
+  const uint8_t COLOR_BLUE = 2;
+
+  if (self_color == COLOR_RED) {
     self_color_ = auto_aim::Color::red;
-  } else if (self_color == "blue") {
+  } else if (self_color == COLOR_BLUE) {
     self_color_ = auto_aim::Color::blue;
   } else {
     self_color_.reset();

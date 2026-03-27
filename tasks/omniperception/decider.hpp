@@ -49,7 +49,7 @@ public:
   void get_auto_aim_target(
     std::list<auto_aim::Armor> & armors, const std::vector<int8_t> & auto_aim_target);
 
-  void set_self_color(const std::string & self_color);
+  void set_self_color(uint8_t self_color);  // 使用颜色常量 (COLOR_RED, COLOR_BLUE, COLOR_UNKNOWN)
 
   std::string current_search_color_text() const;
 

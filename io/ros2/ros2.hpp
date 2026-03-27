@@ -31,7 +31,7 @@ public:
 
   std::vector<int8_t> subscribe_autoaim_target();
 
-  std::string subscribe_self_color();
+  uint8_t subscribe_self_color();  // 返回颜色常量 (COLOR_RED, COLOR_BLUE, COLOR_UNKNOWN)
 
   Eigen::Quaterniond subscribe_imu();
 
