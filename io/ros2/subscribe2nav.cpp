@@ -28,13 +28,16 @@ Subscribe2Nav::Subscribe2Nav()
     std::bind(&Subscribe2Nav::self_color_callback, this, std::placeholders::_1));
 
   // Subscribe to IMU data from EtherCAT controller (BEST_EFFORT to match publisher QoS)
+  this->declare_parameter("imu_topic", "/ecat/sn4653115/app2/read");
+  std::string imu_topic = this->get_parameter("imu_topic").as_string();
+
   rclcpp::QoS imu_qos(1);
   imu_qos.best_effort();
   imu_subscription_ = this->create_subscription<sensor_msgs::msg::Imu>(
-    "/ecat/sn4653115/app2/read", imu_qos, /* originally sn4587585, but this ec is not present anymore */
+    imu_topic, imu_qos,
     std::bind(&Subscribe2Nav::imu_callback, this, std::placeholders::_1));
 
-  RCLCPP_INFO(this->get_logger(), "nav_subscriber node initialized with IMU subscription.");
+  RCLCPP_INFO(this->get_logger(), "nav_subscriber node initialized with IMU subscription on topic: %s", imu_topic.c_str());
 }
 
 void Subscribe2Nav::self_color_callback(const dji_referee_protocol::msg::SelfColor::SharedPtr msg)

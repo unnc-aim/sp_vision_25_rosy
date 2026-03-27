@@ -49,6 +49,11 @@ profile_log_ros2_topic_enabled: true
 
 enable_ros2_image_publish: true # false 时不发布 /sp_vision/image_raw 与 /sp_vision/image_autoaim
 
+#####-----ROS2参数-----#####
+nav_subscriber:
+  ros__parameters:
+    imu_topic: "/ecat/sn4653115/app2/read"  # IMU话题，原sn4587585已不可用
+
 #####-----神经网络/预测参数-----#####
 use_traditional: true
 min_confidence: 0.8
