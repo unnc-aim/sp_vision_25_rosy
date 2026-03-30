@@ -52,7 +52,7 @@ enable_ros2_image_publish: true # false 时不发布 /sp_vision/image_raw 与 /s
 #####-----ROS2参数-----#####
 nav_subscriber:
   ros__parameters:
-    imu_topic: "/ecat/sn4653115/app2/read"  # IMU话题，原sn4587585已不可用
+    imu_topic: "/ecat/sn4587585/app2/read"  # IMU话题，sn4587585 for 步兵备车，sn4653115 为哨兵
 
 #####-----神经网络/预测参数-----#####
 use_traditional: true
