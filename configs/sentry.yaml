@@ -48,6 +48,7 @@ profile_log_file_enabled: false
 profile_log_ros2_topic_enabled: true
 
 enable_ros2_image_publish: true # false 时不发布 /sp_vision/image_raw 与 /sp_vision/image_autoaim
+overlay_font_scale: 2.0 # 叠加层字体缩放，1.0 为原始大小，3.0 保持当前效果
 
 #####-----ROS2参数-----#####
 nav_subscriber:

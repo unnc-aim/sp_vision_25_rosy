@@ -41,9 +41,20 @@ namespace
 void draw_autoaim_overlay(
   cv::Mat & image, const std::list<auto_aim::Armor> & armors, const io::Command & command,
   const std::string & tracker_state, const std::string & search_color,
-  const std::string & self_color, double fps, const std::optional<cv::Point> & aim_point_px,
-  const std::optional<double> & final_x)
+  const std::string & self_color, double fps, double font_scale,
+  const std::optional<cv::Point> & aim_point_px, const std::optional<double> & final_x)
 {
+  const double safe_font_scale = std::max(0.1, font_scale);
+
+  double max_confidence = -1.0;
+  for (const auto & armor : armors) {
+    max_confidence = std::max(max_confidence, armor.confidence);
+  }
+
+  const auto confidence_text =
+    max_confidence >= 0.0 ? fmt::format("confidence={:.0f}%", max_confidence * 100.0)
+                          : std::string("confidence=n/a");
+
   for (const auto & armor : armors) {
     if (armor.box.width > 0 && armor.box.height > 0) {
       cv::rectangle(image, armor.box, cv::Scalar(0, 255, 0), 2);
@@ -72,31 +83,39 @@ void draw_autoaim_overlay(
     auto confidence_text = fmt::format("conf={:.0f}%", armor.confidence * 100.0);
     auto confidence_pos = cv::Point(armor.box.x, std::max(20, armor.box.y - 30));
     auto confidence_size = cv::getTextSize(
-      confidence_text, cv::FONT_HERSHEY_SIMPLEX, 0.6, 2, nullptr);
+      confidence_text, cv::FONT_HERSHEY_SIMPLEX, 0.6 * safe_font_scale, 2, nullptr);
     cv::Rect confidence_box(
       confidence_pos.x, confidence_pos.y - confidence_size.height - 6,
       confidence_size.width + 10, confidence_size.height + 10);
     cv::rectangle(image, confidence_box, cv::Scalar(0, 255, 255), cv::FILLED);
     tools::draw_text(
-      image, confidence_text, {confidence_pos.x + 5, confidence_pos.y}, {0, 0, 0}, 0.6, 2);
+      image, confidence_text, {confidence_pos.x + 5, confidence_pos.y}, {0, 0, 0},
+      0.6 * safe_font_scale, 2);
 
     auto label = fmt::format(
       "{}:{} {:.2f}", auto_aim::COLORS[armor.color], auto_aim::ARMOR_NAMES[armor.name],
       armor.confidence);
     cv::Point text_pos{armor.box.x, std::max(20, armor.box.y - 8)};
-    tools::draw_text(image, label, text_pos, {0, 255, 0}, 0.6, 2);
+    tools::draw_text(image, label, text_pos, {0, 255, 0}, 0.6 * safe_font_scale, 2);
   }
 
   auto color_status = fmt::format("self_color={} search_color={}", self_color, search_color);
-  tools::draw_text(image, color_status, {10, 30}, {255, 255, 0}, 0.8, 2);
+  tools::draw_text(image, color_status, {10, static_cast<int>(std::lround(15.0 * safe_font_scale))},
+    {255, 255, 0}, 0.75 * safe_font_scale, 2);
 
   auto status = fmt::format(
     "state={} ctrl={} shoot={} yaw={:.3f} pitch={:.3f}", tracker_state, command.control,
     command.shoot, command.yaw, command.pitch);
-  tools::draw_text(image, status, {10, 60}, {0, 255, 255}, 0.7, 2);
+  tools::draw_text(image, status,
+    {10, static_cast<int>(std::lround(32.0 * safe_font_scale))}, {0, 255, 255},
+    0.65 * safe_font_scale, 2);
 
   auto fps_text = fmt::format("fps={:.1f}", fps);
-  tools::draw_text(image, fps_text, {10, 90}, {255, 255, 255}, 0.7, 2);
+  tools::draw_text(image, fps_text, {10, static_cast<int>(std::lround(48.0 * safe_font_scale))},
+    {255, 255, 255}, 0.65 * safe_font_scale, 2);
+  tools::draw_text(image, confidence_text,
+    {10, static_cast<int>(std::lround(65.0 * safe_font_scale))}, {0, 255, 255},
+    0.7 * safe_font_scale, 2);
 
   // if (final_x.has_value()) {
   //   auto final_x_text = fmt::format("final_x={:.3f}", final_x.value());
@@ -106,7 +125,7 @@ void draw_autoaim_overlay(
   if (aim_point_px.has_value()) {
     auto p = aim_point_px.value();
     cv::drawMarker(image, p, cv::Scalar(0, 0, 255), cv::MARKER_CROSS, 20, 2);
-    tools::draw_text(image, "aim_point", {p.x + 8, p.y - 8}, {0, 0, 255}, 0.6, 2);
+    tools::draw_text(image, "aim_point", {p.x + 8, p.y - 8}, {0, 0, 255}, 0.6 * safe_font_scale, 2);
   }
 }
 }  // namespace
@@ -149,6 +168,12 @@ int main(int argc, char * argv[])
   if (yaml["enable_ros2_image_publish"]) {
     enable_ros2_image_publish = yaml["enable_ros2_image_publish"].as<bool>();
   }
+
+  double overlay_font_scale = 2.0;
+  if (yaml["overlay_font_scale"]) {
+    overlay_font_scale = yaml["overlay_font_scale"].as<double>();
+  }
+  overlay_font_scale = std::max(0.1, overlay_font_scale);
 
   std::size_t profile_log_flush_every = 200;
   if (yaml["profile_log_flush_every"]) {
@@ -266,7 +291,7 @@ int main(int argc, char * argv[])
 
     if (img.empty()) {
       cv::Mat placeholder(720, 1280, CV_8UC3, cv::Scalar(0, 0, 0));
-      tools::draw_text(placeholder, "SP Vision: no camera frame", {30, 60}, {0, 0, 255}, 1.0, 2);
+      tools::draw_text(placeholder, "SP Vision: no camera frame", {30, 60}, {0, 0, 255}, 3.0, 2);
       if (enable_ros2_image_publish) {
         {
           tools::ProfileScope scope(profile_log, "ros2.publish_raw_image");
@@ -471,7 +496,7 @@ int main(int argc, char * argv[])
       tools::ProfileScope scope(profile_log, "draw_autoaim_overlay");
       draw_autoaim_overlay(
         autoaim_img, armors, command, tracker.state(), search_color, self_color, publish_fps,
-        aim_point_px, final_x);
+        overlay_font_scale, aim_point_px, final_x);
     }
     if (enable_ros2_image_publish) {
       tools::ProfileScope scope(profile_log, "ros2.publish_autoaim_image");
