@@ -68,6 +68,18 @@ void draw_autoaim_overlay(
 
     tools::draw_points(image, armor.points, {0, 255, 0}, 2);
     cv::circle(image, armor.center, 3, cv::Scalar(0, 255, 255), -1);
+
+    auto confidence_text = fmt::format("conf={:.0f}%", armor.confidence * 100.0);
+    auto confidence_pos = cv::Point(armor.box.x, std::max(20, armor.box.y - 30));
+    auto confidence_size = cv::getTextSize(
+      confidence_text, cv::FONT_HERSHEY_SIMPLEX, 0.6, 2, nullptr);
+    cv::Rect confidence_box(
+      confidence_pos.x, confidence_pos.y - confidence_size.height - 6,
+      confidence_size.width + 10, confidence_size.height + 10);
+    cv::rectangle(image, confidence_box, cv::Scalar(0, 255, 255), cv::FILLED);
+    tools::draw_text(
+      image, confidence_text, {confidence_pos.x + 5, confidence_pos.y}, {0, 0, 0}, 0.6, 2);
+
     auto label = fmt::format(
       "{}:{} {:.2f}", auto_aim::COLORS[armor.color], auto_aim::ARMOR_NAMES[armor.name],
       armor.confidence);
