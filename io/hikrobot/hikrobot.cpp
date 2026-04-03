@@ -115,6 +115,22 @@ void HikRobot::read(cv::Mat & img, std::chrono::steady_clock::time_point & times
   timestamp = data.timestamp;
 }
 
+void HikRobot::set_exposure_ms(double exposure_ms)
+{
+  exposure_us_ = exposure_ms * 1e3;
+  if (capturing_ && handle_) {
+    set_float_value("ExposureTime", exposure_us_);
+  }
+}
+
+void HikRobot::set_gain(double gain)
+{
+  gain_ = gain;
+  if (capturing_ && handle_) {
+    set_float_value("Gain", gain_);
+  }
+}
+
 void HikRobot::capture_start()
 {
   handle_ = nullptr;

@@ -21,6 +21,8 @@ public:
     const std::string & serial_number = "");
   ~HikRobot() override;
   void read(cv::Mat & img, std::chrono::steady_clock::time_point & timestamp) override;
+  void set_exposure_ms(double exposure_ms) override;
+  void set_gain(double gain) override;
 
 private:
   struct CameraData
